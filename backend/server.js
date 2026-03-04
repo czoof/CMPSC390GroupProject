@@ -7,6 +7,8 @@ const path = require("path");
 app.use(express.static(path.join(__dirname, "../Sprint2Alberto")));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
 /* Root route */
 app.get("/", (req, res) => {
   res.send("CMPSC390 Backend API is running (Charles - Backend).");
@@ -28,9 +30,12 @@ app.get("/parts", (req, res) => {
 });
 /* User login */
 app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const sql = "SELECT * FROM `User` WHERE UserName = ?";
-  db.query(sql, [username], (err, results) => {
+  const { EmployeeID, password } = req.body;
+  /*const sql = "SELECT * FROM `Employees` WHERE EmployeeID = ?"; BEFORE MY SQL KEEP in case*/
+  /* see if they are management and or employed */
+  const sql =  "SELECT * FROM Employees JOIN EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID WHERE Employees.EmployeeID = ? AND EmployeePerformance.ActivelyEmployed = TRUE";
+
+  db.query(sql, [EmployeeID], (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: "Database error" });
