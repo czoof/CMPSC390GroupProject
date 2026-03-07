@@ -6,8 +6,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-//Serve static files from the project root:
-//http://localhost:3000/Sprint1Alberto/CustomerSignInPage.html
+
+// Serve static files from the project root
+// Example: http://localhost:3000/Sprint2Alberto/CustomerSingInPage.html
 app.use(express.static(path.join(__dirname, "..")));
 
 /* Root route */
@@ -58,12 +59,31 @@ app.post("/login", (req, res) => {
       return res.status(401).json({ message: "Login failed" });
     }
 
-    // Return something useful for your dashboard flow
     res.json({
       message: "Login successful",
       userId: user.UserID ?? user.id ?? null,
       username: user.UserName ?? username,
     });
+  });
+});
+
+/* Get customer by ID (for dashboard) */
+app.get("/customer/:id", (req, res) => {
+  const userId = req.params.id;
+
+  const sql = "SELECT UserID, UserName FROM `User` WHERE UserID = ?";
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(results[0]);
   });
 });
 
