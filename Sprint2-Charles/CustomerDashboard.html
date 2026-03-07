@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <h1>Customer Dashboard</h1>
+
+    <p id="welcomeMessage"></p>
+    <p id="userIdDisplay"></p>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get("userId");
+
+        document.getElementById("welcomeMessage").textContent =
+            "Welcome to your dashboard.";
+
+        document.getElementById("userIdDisplay").textContent =
+            "Logged in User ID: " + userId;
+    </script>
+</body>
+</html>
