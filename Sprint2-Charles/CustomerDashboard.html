@@ -108,6 +108,9 @@
 <div class="content-box">
     <h2>Saved Vehicle Configurations</h2>
     <p id="savedBuildsMessage">No saved builds loaded yet.</p>
+
+    <br>
+    <button onclick="goBackToDashboard()">Go Back</button>
 </div>
 
 <footer>
@@ -142,11 +145,19 @@ async function loadCustomer() {
             "Error loading user data.";
     }
 }
-
 function logoutUser() {
     localStorage.removeItem("userId");
     localStorage.removeItem("username");
     window.location.replace("/Sprint2Alberto/CustomerSingInPage.html");
+}
+function goBackToDashboard() {
+    const userId = localStorage.getItem("userId");
+
+    if (userId) {
+        window.location.href = "/Sprint2-Charles/CustomerDashboard.html?userId=" + userId;
+    } else {
+        window.location.href = "/Sprint2Alberto/CustomerSingInPage.html";
+    }
 }
 
 loadCustomer();
