@@ -61,10 +61,9 @@ app.post("/login", (req, res) => {
     //res.json({ message: "Login successful" });
 
     if (user.Management) {
-      return res.redirect("/ManagerDashboardPage.html")
-    } else{
-      return res.redirect("/EmployeeDashboardPage.html")
-
+      return res.redirect(`/ManagerDashboardPage.html?name=${user.FirstName}%20${user.LastName}&manager=${user.Management}`)
+    } else{ 
+      return res.redirect(`/EmployeeDashboardPage.html?name=${user.FirstName}%20${user.LastName}&manager=${user.Management}`)
     }
   });
 });
