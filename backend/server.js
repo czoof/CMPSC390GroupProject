@@ -34,7 +34,12 @@ app.get("/parts", (req, res) => {
 app.post("/login", (req, res) => {
   const { EmployeeID, password } = req.body;
   /*const sql = "SELECT * FROM `Employees` WHERE EmployeeID = ?"; BEFORE MY SQL KEEP in case*/
-  /* see if they are management and or employed */
+  /* SAME AS THe SQL STATEMENT BUT READABLE*/
+  /*"SELECT * FROM Employees 
+  JOIN EmployeePerformance 
+  ON Employees.EmployeeID = EmployeePerformance.EmployeeID 
+  WHERE Employees.EmployeeID = ? 
+  AND EmployeePerformance.ActivelyEmployed = TRUE";*/
   const sql =  "SELECT * FROM Employees JOIN EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID WHERE Employees.EmployeeID = ? AND EmployeePerformance.ActivelyEmployed = TRUE";
 
   db.query(sql, [EmployeeID], (err, results) => {
