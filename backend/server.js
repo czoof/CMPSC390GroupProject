@@ -1,8 +1,10 @@
+require('dotenv').config();
 const express = require("express");
 const db = require("./db");
 const app = express();
-const PORT = 3000;
+//const PORT = 3000;
 const path = require("path");
+const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, "../Sprint2Alberto")));
 
@@ -51,7 +53,14 @@ app.post("/login", (req, res) => {
       return res.status(401).json({ message: "Login failed" });
     }
 
-    res.json({ message: "Login successful" });
+    //res.json({ message: "Login successful" });
+
+    if (user.Management) {
+      return res.redirect("/ManagerDashboardPage.html")
+    } else{
+      return res.redirect("/EmployeeDashboardPage.html")
+
+    }
   });
 });
 /* Start server */
