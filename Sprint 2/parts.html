@@ -77,7 +77,7 @@ function displayParts() {
 
     const name = document.createElement("h3");
     name.textContent = part.name;
-    if (part.stock_quantity === 0) name.classList.add("out");
+    if (part.Stock === 0) name.classList.add("out");
 
     const price = document.createElement("p");
     price.textContent = "Price: $" + part.price;
@@ -85,17 +85,17 @@ function displayParts() {
     const category = document.createElement("p");
     category.textContent = "Category: " + part.category;
 
-    const stock = document.createElement("p");
-    stock.textContent = "Stock: " + part.stock_quantity;
+    const Stock = document.createElement("p");
+    Stock.textContent = "Stock: " + part.Stock;
 
     info.appendChild(name);
     info.appendChild(price);
     info.appendChild(category);
-    info.appendChild(stock);
+    info.appendChild(Stock);
 
     // Button
     const button = document.createElement("button");
-    if (part.stock_quantity === 0) {
+    if (part.Stock === 0) {
       button.textContent = "Out of Stock";
       button.disabled = true;
     } else {
@@ -113,14 +113,14 @@ function displayParts() {
 
 // Add part to cart
 function addToCart(part) {
-  const exists = cart.find(item => item.id === part.id);
+  const exists = cart.find(item => item.PartID === part.PartID);
   if (!exists) cart.push(part);
   displayCart();
 }
 
 // Remove part from cart
 function removeFromCart(partId) {
-  cart = cart.filter(item => item.id !== partId);
+  cart = cart.filter(item => item.PartID !== partId);
   displayCart();
 }
 
@@ -135,12 +135,12 @@ function displayCart() {
     const div = document.createElement("div");
     div.className = "cart-item";
 
-    div.textContent = item.name + " ($" + item.price + ")";
+    div.textContent = item.Name + " ($" + item.price + ")";
     total += Number(item.price);
 
     const removeBtn = document.createElement("button");
     removeBtn.textContent = "Remove";
-    removeBtn.onclick = () => removeFromCart(item.id);
+   removeBtn.onclick = () => removeFromCart(item.PartID);
 
     div.appendChild(removeBtn);
     container.appendChild(div);

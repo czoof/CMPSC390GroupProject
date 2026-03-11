@@ -37,10 +37,10 @@ app.get("/api/parts", (req, res) => {
   }
 
   // Safe stock filtering
-  if (inStock === "true") {
-    query += " AND stock_quantity > ?";
-    params.push(0);
-  }
+if (inStock === "true") {
+  query += " AND Stock > ?";
+  params.push(0);
+}
 
   db.query(query, params, (err, results) => {
     if (err) {
