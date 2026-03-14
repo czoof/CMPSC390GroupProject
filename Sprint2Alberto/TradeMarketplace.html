@@ -45,12 +45,16 @@ let output = "";
 data.forEach(trade => {
 
 output += `
+<img src="${trade.ImageURL}" width="200"><br>
+
 <p>Part ID: ${trade.OfferedPartID}</p>
 <p>Condition: ${trade.ConditionDescription}</p>
 <p>Price Range: ${trade.DesiredMinPrice} - ${trade.DesiredMaxPrice}</p>
+
 <button onclick="acceptTrade(${trade.TradeID})">Accept Trade</button>
 <hr>
 `;
+
 
 });
 
