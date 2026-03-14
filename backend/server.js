@@ -109,15 +109,15 @@ app.get("/trades", (req, res) => {
 /* code that allows you to post a trade offer */
 app.post("/createTrade", (req, res) => {
 
-  const { OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription } = req.body;
+  const { OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription, ImageURL } = req.body;
 
   const sql = `
     INSERT INTO Trades
-    (OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription)
+    (OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription, ImageURL)
     VALUES (?, ?, ?, ?, ?)
   `;
 
-  db.query(sql, [OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription], (err, results) => {
+  db.query(sql, [OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription, ImageURL], (err, results) => {
 
     if (err) {
       console.error(err);
