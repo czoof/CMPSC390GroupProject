@@ -87,6 +87,112 @@ app.get("/customer/:id", (req, res) => {
   });
 });
 
+/* Code for trade listings */
+app.get("/trades", (req, res) => {
+
+  const sql = "SELECT * FROM Trades WHERE Status = 'OPEN'";
+
+  db.query(sql, (err, results) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json(results);
+
+  });
+
+});
+
+
+/* code that allows you to post a trade offer */
+app.post("/createTrade", (req, res) => {
+
+  const { OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription } = req.body;
+
+  const sql = `
+    INSERT INTO Trades
+    (OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [OwnerUserID, OfferedPartID, DesiredMinPrice, DesiredMaxPrice, ConditionDescription], (err, results) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json({ message: "Trade created successfully" });
+
+  });
+
+});
+
+
+/* code that lets you accept a trade */
+app.post("/acceptTrade/:id", (req, res) => {
+
+  const tradeId = req.params.id;
+
+  const sql = "UPDATE Trades SET Status = 'ACCEPTED' WHERE TradeID = ?";
+
+  db.query(sql, [tradeId], (err, results) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json({ message: "Trade accepted successfully" });
+
+  });
+
+});
+
+/* code that allows you to create a trade offer */
+app.post("/createOffer", (req, res) => {
+
+  const { TradeID, OfferingUserID, OfferedPartDescription } = req.body;
+
+  const sql = `
+  INSERT INTO TradeOffers (TradeID, OfferingUserID, OfferedPartDescription)
+  VALUES (?, ?, ?)
+  `;
+
+  db.query(sql, [TradeID, OfferingUserID, OfferedPartDescription], (err) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json({ message: "Trade offer submitted!" });
+
+  });
+
+});
+
+
+/* code that lets you view offers for your trade */
+app.get("/offers/:tradeId", (req, res) => {
+
+  const sql = "SELECT * FROM TradeOffers WHERE TradeID = ?";
+
+  db.query(sql, [req.params.tradeId], (err, results) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json(results);
+
+  });
+
+});
+
 /* Start server */
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
