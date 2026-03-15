@@ -6,11 +6,6 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-
-// Serve static files from the project root
-// Example: http://localhost:3000/Sprint2Alberto/CustomerSingInPage.html
-app.use(express.static(path.join(__dirname, "..")));
-
 /* Root route */
 app.get("/", (req, res) => {
   res.send("CMPSC390 Backend API is running (Charles - Backend).");
