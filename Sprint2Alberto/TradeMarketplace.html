@@ -39,7 +39,12 @@
 </div>
 
 <div class="right section">
+
+<button onclick="logout()">Logout</button>
+<br><br>
+
 <button onclick="window.location.href='index.html'">Go back</button>
+
 </div>
 
 </div>
@@ -49,6 +54,10 @@
 </footer>
 
 <script>
+/* This redirects to the login page, as you must be logged in in order to access the trading feature*/
+if(!localStorage.getItem("userId")){
+window.location.href = "CustomerSingInPage.html";
+}
 
 function loadTrades(){
 
@@ -109,7 +118,7 @@ headers: {
 
 body: JSON.stringify({
 
-OwnerUserID: 293,
+OwnerUserID: localStorage.getItem("userId"),
 
 OfferedPartID: document.getElementById("partID").value,
 
@@ -169,7 +178,7 @@ headers: {
 body: JSON.stringify({
 
 TradeID: tradeId,
-OfferingUserID: 293,
+OfferingUserID: localStorage.getItem("userId"),
 OfferedPartDescription: description
 
 })
@@ -208,6 +217,15 @@ output += `
 document.getElementById("offers" + tradeId).innerHTML = output;
 
 });
+
+}
+
+function logout(){
+
+localStorage.removeItem("userId");
+localStorage.removeItem("username");
+
+window.location.href = "CustomerSingInPage.html";
 
 }
 </script>
