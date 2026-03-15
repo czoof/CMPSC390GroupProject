@@ -47,9 +47,9 @@
 
 <br><br>
 
-<div id="tradeMessage" style="display:none; border:1px solid black; padding:10px; background:#f5f5f5;">
-<p id="messageText"></p>
-<button onclick="closeMessage()">Close</button>
+<h3>Completed Trades</h3>
+
+<div id="completedTrades" style="border:1px solid black; padding:10px; background:#f5f5f5;">
 </div>
 
 </div>
@@ -256,7 +256,13 @@ fetch("/acceptOffer/" + offerId,{
 method:"POST"
 })
 .then(res => res.json())
-.then(data => showTradeMessage(data.message));
+.then(data => {
+
+showTradeMessage(data.message);
+
+loadTrades();
+
+});
 
 }
 
@@ -271,9 +277,12 @@ window.location.href = "CustomerSingInPage.html";
 
 function showTradeMessage(message){
 
-document.getElementById("messageText").innerText = message;
+let section = document.getElementById("completedTrades");
 
-document.getElementById("tradeMessage").style.display = "block";
+section.innerHTML += `
+<p>${message}</p>
+<hr>
+`;
 
 }
 

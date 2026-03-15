@@ -220,9 +220,14 @@ const offerId = req.params.id;
 
 /* code that gets offer info */
 const sql = `
-SELECT TradeOffers.*, Trades.OwnerUserID
+SELECT 
+TradeOffers.*, 
+Trades.OwnerUserID,
+Trades.OfferedPartID,
+Parts.PartName
 FROM TradeOffers
 JOIN Trades ON TradeOffers.TradeID = Trades.TradeID
+JOIN Parts ON Trades.OfferedPartID = Parts.PartID
 WHERE OfferID = ?
 `;
 
@@ -256,7 +261,9 @@ db.query(deleteOthers,[offer.TradeID,offerId]);
 
 res.json({
 message:
-"Trade complete! Please drop your part off at the nearest Legacy Auto location. If we do not receive your part within 30 days, you will be fined. If you dropped off a part and the other user did not, we will hold your part in storage for 90 days. You can close this message once you understand."
+`Trade complete! Original poster will send in: ${offer.PartName}. 
+Offer user will send in: ${offer.OfferedPartDescription}. 
+Please drop your part off at the nearest Legacy Auto location within 30 days or you may be fined.`
 });
 
 });
