@@ -90,7 +90,7 @@ app.get("/customer/:id", (req, res) => {
 /* Code for trade listings */
 app.get("/trades", (req, res) => {
 
-  const sql = "SELECT * FROM Trades WHERE Status = 'OPEN'";
+  const sql = `SELECT Trades.*, User.UserName FROM Trades JOIN User ON Trades.OwnerUserID = User.UserID WHERE Trades.Status = 'OPEN'`;
 
   db.query(sql, (err, results) => {
 
@@ -178,7 +178,7 @@ app.post("/createOffer", (req, res) => {
 /* code that lets you view offers for your trade */
 app.get("/offers/:tradeId", (req, res) => {
 
-  const sql = "SELECT * FROM TradeOffers WHERE TradeID = ?";
+  const sql = `SELECT TradeOffers.*, User.UserName FROM TradeOffers JOIN User ON TradeOffers.OfferingUserID = User.UserID WHERE TradeOffers.TradeID = ?`;
 
   db.query(sql, [req.params.tradeId], (err, results) => {
 

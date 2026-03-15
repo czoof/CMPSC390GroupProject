@@ -81,6 +81,8 @@ const currentUser = localStorage.getItem("userId");
 output += `
 <img src="${trade.ImageURL}" width="200"><br>
 
+<p><strong>Posted by:</strong> ${trade.UserName}</p>
+
 <p>Part ID: ${trade.OfferedPartID}</p>
 <p>Condition: ${trade.ConditionDescription}</p>
 <p>Price Range: ${trade.DesiredMinPrice} - ${trade.DesiredMaxPrice}</p>
@@ -221,7 +223,7 @@ let output = "<h4>Offers:</h4>";
 data.forEach(offer => {
 
 output += `
-<p>User ${offer.OfferingUserID}</p>
+<p><strong>Offer from:</strong> ${offer.UserName}</p>
 <p>${offer.OfferedPartDescription}</p>
 
 <button onclick="acceptOffer(${offer.OfferID})">Accept Offer</button>
