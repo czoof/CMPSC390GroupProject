@@ -33,6 +33,26 @@ app.get("/parts", (req, res) => {
   });
 });
 
+/* Get customized cars for a user */
+app.get("/cars/:userId", (req, res) => {
+
+  const userId = req.params.userId;
+
+  const sql = "SELECT * FROM Customized_car WHERE UserID = ?";
+
+  db.query(sql, [userId], (err, results) => {
+
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    res.json(results);
+
+  });
+
+});
+
 /* User login */
 app.post("/login", (req, res) => {
   const { username, password } = req.body;

@@ -118,6 +118,9 @@
     <p id="savedBuildsMessage">No saved builds loaded yet.</p>
 
     <br>
+    <button onclick="window.location.href='/Sprint2-Charles/SavedConfigurations.html'">
+        View
+    </button>
 </div>
 
 <footer>
@@ -152,6 +155,32 @@ async function loadCustomer() {
             "Error loading user data.";
     }
 }
+
+async function loadSavedBuilds() {
+
+    try {
+
+        const res = await fetch("/cars/" + userId);
+        const builds = await res.json();
+
+        if (builds.length === 0) {
+            document.getElementById("savedBuildsMessage").innerText =
+                "No saved builds loaded yet.";
+        } else {
+            document.getElementById("savedBuildsMessage").innerText =
+                "You currently have " + builds.length + " saved configurations.";
+        }
+
+    } catch (err) {
+
+        document.getElementById("savedBuildsMessage").innerText =
+            "Unable to load saved configurations.";
+
+    }
+
+}
+
+loadSavedBuilds();
 
 function logoutUser() {
     localStorage.removeItem("userId");
