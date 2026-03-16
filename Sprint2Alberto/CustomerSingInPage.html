@@ -33,6 +33,56 @@
         </div>
         
         <footer><h2>This is legacy Auto Comp!!!!! we are excited to bring you a new perspective on creativity and home to build your vision</h2></footer>
+    
+        <script>
 
+document.getElementById("loginForm").addEventListener("submit", function(e){
+
+e.preventDefault();
+
+const formData = new FormData(this);
+
+const username = formData.get("username");
+const password = formData.get("password");
+
+fetch("/login", {
+
+method: "POST",
+
+headers: {
+"Content-Type": "application/json"
+},
+
+body: JSON.stringify({
+username: username,
+password: password
+})
+
+})
+
+.then(res => res.json())
+
+.then(data => {
+
+if(data.userId){
+
+// save user session
+localStorage.setItem("userId", data.userId);
+localStorage.setItem("username", data.username);
+
+// redirect to marketplace
+window.location.href = "TradeMarketplace.html";
+
+}else{
+
+alert(data.message || "Login failed");
+
+}
+
+});
+
+});
+
+</script>
     </body>
 </html>
