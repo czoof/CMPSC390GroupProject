@@ -327,13 +327,16 @@
                             document.getElementById("employeeSelect").value;
                             const res = await fetch(`/getEmployeeStats?EmployeeID=${employeeID}`);
                             const data = await res.json();
-
+                            const status = Number(data.ActivelyEmployed) === 1 ? "Employed" : "Terminated";
+                            
+                            console.log(data); 
                             document.getElementById("InteractiveDisplay").innerHTML = `
                             <h2>${data.FirstName} ${data.LastName}</h2>
                             <p>Employee ID: ${data.EmployeeID}</p>
                             <p>Points: ${data.Points}</p>
                             <p>Comments: ${data.Comments}</p>
                             <p>Hourly Pay: $${data.HourlyPay}</p>
+                            <p>Employment Status: ${status}</p>
                             `;
                         }
                     
