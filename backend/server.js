@@ -390,7 +390,7 @@ app.post("/denyRequest",(req,res)=>{
 
 app.get("/getEmployeeStats",(req,res)=>{
     const {EmployeeID} = req.query;
-    const sql = `SELECT Employees.EmployeeID, FirstName, LastName, HourlyPay, Points, Comments FROM Employees JOIN EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID WHERE Employees.EmployeeID = ?`;
+    const sql = `SELECT Employees.EmployeeID, FirstName, LastName, HourlyPay, Points, Comments, ActivelyEmployed FROM Employees JOIN EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID WHERE Employees.EmployeeID = ?`;
     db.query(sql,[EmployeeID],(err,results)=>{
         res.json(results[0]);
     });
@@ -448,6 +448,7 @@ app.post("/promoteManager",(req,res)=>{
         res.send("Employee promoted");
     });
 });
+
 /*Password Change*/
 app.post("/changePassword", (req, res) => {
   const {EmployeeID, oldPassword, newPassword} = req.body;
