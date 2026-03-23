@@ -4,6 +4,7 @@
         <title>Employee SignIn Page</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="styles.css">
+        <script src="/sessionManager.js"></script>
     </head>
     
     <body>
@@ -13,7 +14,6 @@
             <div>
                <h2>Employee SignIn Page</h2>
 
-<<<<<<< HEAD
                 <h2>Login</h2>
                     <form id="loginForm">
                     <label>Username</label><br />
@@ -24,40 +24,7 @@
                     </form>
                     <p id="loginResult"></p>
 
-=======
-                <h2>Login</h2> <!--This comes from Lab1-->
-                    <form id="loginForm">
-                        <label>EmployeeID</label><br />
-                        <input type="text" name="EmployeeID" required /><br /><br />
-                        <label>Password</label><br />
-                        <input type="password" name="password" required /><br /><br />
-                        <button type="submit">Login</button>
-                    </form>
-                    <p id="loginResult"></p>
-
-                    <script>
-                        const loginForm = document.getElementById('loginForm');
-                        const loginResult = document.getElementById('loginResult');
-                        loginForm.addEventListener('submit', async (e) => {
-                            e.preventDefault();
-                            const formData = new FormData(loginForm);
-                            const res = await fetch('/Employeelogin', {
-                                method: 'POST',
-                                body: new URLSearchParams(formData)
-                        });
-                        if(res.redirected){
-                            window.location.href = res.url;
-                            return;
-                        }
-                        const text = await res.text();
-                        loginResult.textContent = text;
-                        });
-                    </script>
-
-
-
->>>>>>> c1dcc553348a59f278862fac6cd761be4c56dadf
-                <button onclick = "window.location.href='index.html'">Go back</button> 
+                <button onclick = "window.location.href='/index.html'">Go back</button> 
             </div>
             
         </div>
@@ -65,4 +32,56 @@
         <footer><h2>This is legacy Auto Comp!!!!! we are excited to bring you a new perspective on creativity and hope to make your vision a reality</h2></footer>
 
     </body>
+
+    <script>
+        const form = document.getElementById("loginForm");
+        const loginResult = document.getElementById("loginResult");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const employeeID = document.querySelector('input[name="username"]').value.trim();
+            const password = document.querySelector('input[name="password"]').value;
+
+            try {
+                const res = await fetch("/Employeelogin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ EmployeeID: employeeID, password })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    loginResult.textContent = data.message || "Login failed";
+                    loginResult.style.color = "red";
+                    return;
+                }
+
+                // Use SessionManager to store employee session
+                SessionManager.setUser('employee', {
+                    employeeId: data.employeeId,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    isManager: data.isManager
+                });
+
+                loginResult.textContent = "Login successful!";
+                loginResult.style.color = "green";
+
+                // Redirect based on manager status
+                const redirectUrl = data.isManager 
+                    ? "/Sprint2Alberto/ManagerDashboardPage.html" 
+                    : "/Sprint2Alberto/EmployeeDashboardPage.html";
+                
+                setTimeout(() => window.location.replace(redirectUrl), 500);
+
+            } catch (err) {
+                console.error(err);
+                loginResult.textContent = "Server error. Check backend console.";
+                loginResult.style.color = "red";
+            }
+        });
+    </script>
+
 </html>
