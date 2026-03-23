@@ -587,9 +587,13 @@
                             <br><br>
 
                             <button onclick="addRecognition('${employeeID}')">Save Comment</button>
+                            <br><br> 
+                    
+                            <button onclick="rehireEmployee('${employeeID}')">Rehire Employee</button>
                             <br><br>
 
-                            <button onclick="promoteManager('${employeeID}')">Promote to Manager</button>`;
+                            <button onclick="promoteManager('${employeeID}')">Promote to Manager</button>
+                            `;
                         }
 
                         async function giveRaise(employeeID){
@@ -625,6 +629,18 @@
                                 })
                             });
                             alert("Comment Submitted.");
+                            viewRecognition(employeeID);
+                        }
+
+                        async function rehireEmployee(employeeID){
+                            await fetch("/rehireEmployee",{
+                                method:"POST",
+                                headers:{"Content-Type":"application/json"},
+                                body:JSON.stringify({
+                                    EmployeeID:employeeID
+                                })
+                            });
+                            alert("Employee rehired");
                             viewRecognition(employeeID);
                         }
 
