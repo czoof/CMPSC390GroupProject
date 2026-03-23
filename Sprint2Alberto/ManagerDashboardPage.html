@@ -4,12 +4,32 @@
         <title>Manager Dashboard Page</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="styles.css">
+        <style>
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                width: 100%;
+            }
+            .left.section {
+                width: 260px;
+                flex-shrink: 0;
+                padding: 20px;
+            }
+            .right.section {
+                flex: 1;
+                padding: 20px;
+                align-items: flex-start;
+            }
+            .left.section button {
+                width: 220px;
+            }
+        </style>
     </head>
     
     <body>
         <header><h1>Legacy Auto Company</h1></header>
         
-        <div class = "container" style="justify-content: center;">
+        <div class="container">
             
                 <div class = "left section">
                     <h2 id="welcome">Hello Manager</h2>
@@ -25,6 +45,8 @@
                     <button onclick = "loadEmployeeOptions()">Employee Options</button>
                     <br><br>
                     <button onclick="loadChangePassword()">Change Password</button>
+                    <br><br>
+                    <button onclick="window.location.href='EmployeeSignInPage.html'">Go back</button>
                 </div>
                 
                 <div class = "right section" id="InteractiveDisplay"></div>

@@ -829,15 +829,21 @@ app.post("/denyRequest", (req, res) => {
 });
 
 app.get("/getEmployeeStats", (req, res) => {
-  const sql = `SELECT Employees.EmployeeID, Employees.FirstName, Employees.LastName, EmployeePerformance.Points, EmployeePerformance.Comments 
-               FROM Employees JOIN EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID`;
+  const employeeID = req.query.EmployeeID;
+  const sql = `SELECT Employees.EmployeeID, Employees.FirstName, Employees.LastName, Employees.HourlyPay,
+               EmployeePerformance.Points, EmployeePerformance.Comments, EmployeePerformance.ActivelyEmployed
+               FROM Employees JOIN EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID
+               WHERE Employees.EmployeeID = ?`;
   
-  db.query(sql, (err, results) => {
+  db.query(sql, [employeeID], (err, results) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Database error");
     }
-    res.json(results);
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+    res.json(results[0]);
   });
 });
 
@@ -854,15 +860,66 @@ app.get("/getEmployees", (req, res) => {
 });
 
 app.post("/addPoints", (req, res) => {
-  const { EmployeeID, Points } = req.body;
+  const { EmployeeID, points } = req.body;
   const sql = `UPDATE EmployeePerformance SET Points = Points + ? WHERE EmployeeID = ?`;
   
-  db.query(sql, [Points, EmployeeID], (err) => {
+  db.query(sql, [points, EmployeeID], (err) => {
     if (err) {
       console.error(err);
       return res.status(500).send("Database error");
     }
     res.json({ message: "Points added" });
+  });
+});
+
+app.post("/terminateEmployee", (req, res) => {
+  const { EmployeeID } = req.body;
+  const sql = `UPDATE EmployeePerformance SET ActivelyEmployed = FALSE WHERE EmployeeID = ?`;
+  db.query(sql, [EmployeeID], (err) => {
+    if (err) { console.error(err); return res.status(500).send("Database error"); }
+    res.json({ message: "Employee terminated" });
+  });
+});
+
+app.post("/giveRaise", (req, res) => {
+  const { EmployeeID, raise } = req.body;
+  const sql = `UPDATE Employees SET HourlyPay = HourlyPay + ? WHERE EmployeeID = ?`;
+  db.query(sql, [raise, EmployeeID], (err) => {
+    if (err) { console.error(err); return res.status(500).send("Database error"); }
+    res.json({ message: "Raise applied" });
+  });
+});
+
+app.post("/recognitionComment", (req, res) => {
+  const { EmployeeID, comment } = req.body;
+  const sql = `UPDATE EmployeePerformance SET Comments = ? WHERE EmployeeID = ?`;
+  db.query(sql, [comment, EmployeeID], (err) => {
+    if (err) { console.error(err); return res.status(500).send("Database error"); }
+    res.json({ message: "Comment saved" });
+  });
+});
+
+app.post("/promoteManager", (req, res) => {
+  const { EmployeeID } = req.body;
+  const sql = `UPDATE Employees SET Management = TRUE WHERE EmployeeID = ?`;
+  db.query(sql, [EmployeeID], (err) => {
+    if (err) { console.error(err); return res.status(500).send("Database error"); }
+    res.json({ message: "Employee promoted to manager" });
+  });
+});
+
+app.post("/changePassword", (req, res) => {
+  const { EmployeeID, oldPassword, newPassword } = req.body;
+  const sql = `SELECT Password FROM Employees WHERE EmployeeID = ?`;
+  db.query(sql, [EmployeeID], (err, results) => {
+    if (err) { console.error(err); return res.status(500).send("Database error"); }
+    if (results.length === 0) return res.status(404).send("Employee not found");
+    if (results[0].Password !== oldPassword) return res.status(401).send("Old password incorrect");
+    const updateSql = `UPDATE Employees SET Password = ? WHERE EmployeeID = ?`;
+    db.query(updateSql, [newPassword, EmployeeID], (err2) => {
+      if (err2) { console.error(err2); return res.status(500).send("Database error"); }
+      res.send("Password updated successfully");
+    });
   });
 });
 
