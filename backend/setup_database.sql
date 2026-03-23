@@ -1,6 +1,7 @@
 -- ============================================================
 -- LEGACY AUTO CUSTOMIZATION - FULL DATABASE SETUP
 -- Run this entire file in MySQL Workbench to set up everything.
+-- This script resets the DB to a known good state.
 -- ============================================================
 
 DROP DATABASE IF EXISTS legautocustDB;
@@ -11,7 +12,7 @@ USE legautocustDB;
 -- CUSTOMER TABLES
 -- ========================
 
-CREATE TABLE IF NOT EXISTS `User` (
+CREATE TABLE `User` (
     UserID    INT NOT NULL AUTO_INCREMENT,
     FirstName VARCHAR(50) NOT NULL,
     LastName  VARCHAR(50) NOT NULL,
@@ -20,34 +21,52 @@ CREATE TABLE IF NOT EXISTS `User` (
     ZipCode   INT NOT NULL,
     Birthdate DATE NOT NULL,
     PRIMARY KEY (UserID),
-    UNIQUE (UserName)
+    UNIQUE KEY uq_user_username (UserName)
 );
 
-CREATE TABLE IF NOT EXISTS Parts (
-    PartID   INT NOT NULL,
-    Name     VARCHAR(50),
-    Stock    INT NOT NULL DEFAULT 0,
-    Category VARCHAR(100),
-    Image    VARCHAR(2048),
-    Price    DECIMAL(10,2),
+CREATE TABLE Parts (
+    PartID       INT NOT NULL,
+    Name         VARCHAR(100),
+    Stock        INT NOT NULL DEFAULT 0,
+    Availability VARCHAR(30) NOT NULL DEFAULT 'Available',
+    Category     VARCHAR(100),
+    Image        VARCHAR(2048),
+    Price        DECIMAL(10,2),
     PRIMARY KEY (PartID)
 );
 
-CREATE TABLE IF NOT EXISTS Customized_car (
-    CarID      INT NOT NULL AUTO_INCREMENT,
-    BaseCar    VARCHAR(50) NOT NULL,
-    TotalPrice INT NOT NULL DEFAULT 0,
-    PartID     INT,
-    UserID     INT NOT NULL,
+CREATE TABLE Customized_car (
+    CarID       INT NOT NULL AUTO_INCREMENT,
+    BaseCar     VARCHAR(100) NOT NULL,
+    TotalPrice  DECIMAL(10,2) NOT NULL DEFAULT 0,
+    PartID      INT NULL DEFAULT NULL,
+    BuildStatus VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    UserID      INT NOT NULL,
     PRIMARY KEY (CarID),
-    FOREIGN KEY (UserID) REFERENCES `User`(UserID)
+    KEY idx_customized_car_user (UserID),
+    KEY idx_customized_car_part (PartID),
+    CONSTRAINT fk_customized_car_user
+        FOREIGN KEY (UserID) REFERENCES `User`(UserID),
+    CONSTRAINT fk_customized_car_part
+        FOREIGN KEY (PartID) REFERENCES Parts(PartID)
+);
+
+CREATE TABLE Customized_car_parts (
+    CarID   INT NOT NULL,
+    PartID  INT NOT NULL,
+    PRIMARY KEY (CarID, PartID),
+    KEY idx_ccp_part (PartID),
+    CONSTRAINT fk_ccp_car
+        FOREIGN KEY (CarID) REFERENCES Customized_car(CarID) ON DELETE CASCADE,
+    CONSTRAINT fk_ccp_part
+        FOREIGN KEY (PartID) REFERENCES Parts(PartID)
 );
 
 -- ========================
 -- TRADE TABLES
 -- ========================
 
-CREATE TABLE IF NOT EXISTS Trades (
+CREATE TABLE Trades (
     TradeID              INT NOT NULL AUTO_INCREMENT,
     OwnerUserID          INT NOT NULL,
     OfferedPartID        INT,
@@ -57,45 +76,54 @@ CREATE TABLE IF NOT EXISTS Trades (
     ImageURL             VARCHAR(2048),
     Status               VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     PRIMARY KEY (TradeID),
-    FOREIGN KEY (OwnerUserID) REFERENCES `User`(UserID)
+    KEY idx_trades_owner (OwnerUserID),
+    CONSTRAINT fk_trades_owner
+        FOREIGN KEY (OwnerUserID) REFERENCES `User`(UserID)
 );
 
-CREATE TABLE IF NOT EXISTS TradeOffers (
-    OfferID              INT NOT NULL AUTO_INCREMENT,
-    TradeID              INT NOT NULL,
-    OfferingUserID       INT NOT NULL,
-    OfferedPartDescription TEXT,
+CREATE TABLE TradeOffers (
+    OfferID                 INT NOT NULL AUTO_INCREMENT,
+    TradeID                 INT NOT NULL,
+    OfferingUserID          INT NOT NULL,
+    OfferedPartDescription  TEXT,
     PRIMARY KEY (OfferID),
-    FOREIGN KEY (TradeID) REFERENCES Trades(TradeID),
-    FOREIGN KEY (OfferingUserID) REFERENCES `User`(UserID)
+    KEY idx_tradeoffers_trade (TradeID),
+    KEY idx_tradeoffers_user (OfferingUserID),
+    CONSTRAINT fk_tradeoffers_trade
+        FOREIGN KEY (TradeID) REFERENCES Trades(TradeID),
+    CONSTRAINT fk_tradeoffers_user
+        FOREIGN KEY (OfferingUserID) REFERENCES `User`(UserID)
 );
 
 -- ========================
 -- EMPLOYEE TABLES
 -- ========================
 
-CREATE TABLE IF NOT EXISTS Employees (
-    EmployeeID VARCHAR(4)    PRIMARY KEY,
-    FirstName  VARCHAR(25)   NOT NULL,
-    LastName   VARCHAR(25)   NOT NULL,
-    Management BOOLEAN       NOT NULL DEFAULT FALSE,
-    HireDate   DATE          NOT NULL,
-    Password   VARCHAR(50)   NOT NULL,
-    HourlyPay  DECIMAL(5,2)  NOT NULL
+CREATE TABLE Employees (
+    EmployeeID VARCHAR(4)   NOT NULL,
+    FirstName  VARCHAR(25)  NOT NULL,
+    LastName   VARCHAR(25)  NOT NULL,
+    Management BOOLEAN      NOT NULL DEFAULT FALSE,
+    HireDate   DATE         NOT NULL,
+    Password   VARCHAR(50)  NOT NULL,
+    HourlyPay  DECIMAL(5,2) NOT NULL,
+    PRIMARY KEY (EmployeeID)
 );
 
-CREATE TABLE IF NOT EXISTS EmployeeContactInfo (
-    EmployeeID           VARCHAR(4) PRIMARY KEY,
+CREATE TABLE EmployeeContactInfo (
+    EmployeeID           VARCHAR(4) NOT NULL,
     PhoneNumber          VARCHAR(12),
     EmergencyPhoneNumber VARCHAR(12),
     Address              VARCHAR(100),
     PersonalEmail        VARCHAR(40),
     WorkEmail            VARCHAR(50),
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+    PRIMARY KEY (EmployeeID),
+    CONSTRAINT fk_contactinfo_employee
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
 );
 
-CREATE TABLE IF NOT EXISTS Schedule (
-    ScheduleID VARCHAR(4) PRIMARY KEY,
+CREATE TABLE Schedule (
+    ScheduleID VARCHAR(4) NOT NULL,
     EmployeeID VARCHAR(4) NOT NULL,
     MonthNum   INT NOT NULL DEFAULT 1,
     WeekNum    INT NOT NULL DEFAULT 1,
@@ -106,28 +134,36 @@ CREATE TABLE IF NOT EXISTS Schedule (
     Thu        BOOLEAN NOT NULL DEFAULT 0,
     Fri        BOOLEAN NOT NULL DEFAULT 0,
     Sat        BOOLEAN NOT NULL DEFAULT 0,
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+    PRIMARY KEY (ScheduleID),
+    KEY idx_schedule_employee (EmployeeID),
+    CONSTRAINT fk_schedule_employee
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
 );
 
-CREATE TABLE IF NOT EXISTS EmployeePerformance (
-    PerformanceID    VARCHAR(4) PRIMARY KEY,
+CREATE TABLE EmployeePerformance (
+    PerformanceID    VARCHAR(4) NOT NULL,
     EmployeeID       VARCHAR(4) NOT NULL,
     ActivelyEmployed BOOLEAN NOT NULL DEFAULT TRUE,
     Points           INT NOT NULL DEFAULT 0,
     Comments         TEXT,
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+    PRIMARY KEY (PerformanceID),
+    KEY idx_performance_employee (EmployeeID),
+    CONSTRAINT fk_performance_employee
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
 );
 
-CREATE TABLE IF NOT EXISTS TimeOffRequests (
-    RequestID  INT NOT NULL AUTO_INCREMENT,
-    EmployeeID VARCHAR(4) NOT NULL,
-    MonthNum   INT NOT NULL,
-    WeekNum    INT NOT NULL,
-    DayOfWeek  VARCHAR(10) NOT NULL,
-    Reason     TEXT,
-    Status     VARCHAR(20) NOT NULL DEFAULT 'Pending',
+CREATE TABLE TimeOffRequests (
+    RequestID   INT NOT NULL AUTO_INCREMENT,
+    EmployeeID  VARCHAR(4) NOT NULL,
+    MonthNum    INT NOT NULL,
+    WeekNum     INT NOT NULL,
+    DayOfWeek   VARCHAR(10) NOT NULL,
+    Reason      TEXT,
+    Status      VARCHAR(20) NOT NULL DEFAULT 'Pending',
     PRIMARY KEY (RequestID),
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+    KEY idx_timeoff_employee (EmployeeID),
+    CONSTRAINT fk_timeoff_employee
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
 );
 
 -- ========================
@@ -135,21 +171,22 @@ CREATE TABLE IF NOT EXISTS TimeOffRequests (
 -- ========================
 
 INSERT INTO `User` (UserID, FirstName, LastName, Password, UserName, ZipCode, Birthdate)
-VALUES (1, 'Good', 'Mann', 'Manpas303', 'Goodman', 30314, '2000-02-12');
+VALUES
+(1, 'Good', 'Mann', 'Manpas303', 'Goodman', 30314, '2000-02-12');
 
 -- ========================
 -- SAMPLE DATA: PARTS
 -- ========================
 
-INSERT INTO Parts (PartID, Name, Stock, Category, Image, Price) VALUES
-(800210234, 'Buffer 10 in amp 7',                          12, 'buffer',        'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcREb9KrzrUBrarmKe36HkxUStzTokDziBI6_Vo-Y3EDaZVqmzo4NscDLc0zGASRjWCKdNZnMXoV3vIK5dKzzuQ5z4NkKseobWqX5aswUV79I5UcdT5EOfwQ', 65.00),
-(900810524, 'Graphite Gray Metallic Acrylic Urethane Paint', 2,  'paint',         'https://m.media-amazon.com/images/I/811WKwRAdcL._AC_UF894,1000_QL80_.jpg', 180.99),
-(800832124, 'Ryobi 10in Speed Random Orbit',                0,  'buffer',        'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTQ5MXYItCWT7NJX_TNpFyaFTE_vrFNDp_gFeROtZH-rT0VIZAeBrNxBVoBPi-W5fSwja7jzlPM10qNpIqklTlsbDxoM2q9RDrhzkqTVkewLu3ZVFjCYUJufPE', 59.97),
-(300432111, 'Orange Forged Wheel 4-Piece',                  24, 'wheel',         'https://rvrnwheel.com/cdn/shop/files/T081-1937-chevy-coupe-business-wheels-custom-aftermarket-deep-dish-vintage-rims-orange-black-rvrn-forged_2.jpg?v=1740469662', 8000.99),
-(200761731, '376 CI Whipple 3.0L Supercharged LS',          8,  'engine',        'https://www.wegnerautomotive.com/assets/Product-Featured-Images/Angle-1-sm-no-VC.png', 33225.00),
-(400204631, 'The La Cucaracha Musical Horn',                25, 'horn',          'https://hornblasters.com/cdn/shop/files/NEW-LA-CUCARACHA.jpg?v=1762199157&width=1800', 49.99),
-(500467921, 'American Thunder Axle-back Exhaust System',    0,  'exhaust system','https://images.flowmastermufflers.com/583x/1eed06e7ef0232847de4e0989b3c88bc96c2adb5.jpg', 1500.95),
-(900467921, 'Urethane Basecoat - Purple Metallic 1 Gallon', 43, 'paint',         'https://paintforcars.com/wp-content/uploads/2018/10/Purple-Metallic-Auto-Paint-5-570x572-1.jpg', 144.48);
+INSERT INTO Parts (PartID, Name, Stock, Availability, Category, Image, Price) VALUES
+(800210234, 'Universal Performance Bushing',                  20, 'Available',    'suspension',    'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=1200&q=80', 65.00),
+(900810524, 'Graphite Gray Metallic Acrylic Urethane Paint',  2,  'Available',    'paint',         'https://m.media-amazon.com/images/I/811WKwRAdcL._AC_UF894,1000_QL80_.jpg', 180.99),
+(800832124, 'Ryobi 10in Speed Random Orbit',                  0,  'Out of Stock', 'buffer',        'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcTQ5MXYItCWT7NJX_TNpFyaFTE_vrFNDp_gFeROtZH-rT0VIZAeBrNxBVoBPi-W5fSwja7jzlPM10qNpIqklTlsbDxoM2q9RDrhzkqTVkewLu3ZVFjCYUJufPE', 59.97),
+(300432111, 'Orange Forged Wheel 4-Piece',                    24, 'Available',    'wheel',         'https://rvrnwheel.com/cdn/shop/files/T081-1937-chevy-coupe-business-wheels-custom-aftermarket-deep-dish-vintage-rims-orange-black-rvrn-forged_2.jpg?v=1740469662', 8000.99),
+(200761731, '376 CI Whipple 3.0L Supercharged LS',            8,  'Available',    'engine',        'https://www.wegnerautomotive.com/assets/Product-Featured-Images/Angle-1-sm-no-VC.png', 33225.00),
+(400204631, 'The La Cucaracha Musical Horn',                  25, 'Available',    'horn',          'https://hornblasters.com/cdn/shop/files/NEW-LA-CUCARACHA.jpg?v=1762199157&width=1800', 49.99),
+(500467921, 'American Thunder Axle-back Exhaust System',      0,  'Out of Stock', 'exhaust system','https://images.flowmastermufflers.com/583x/1eed06e7ef0232847de4e0989b3c88bc96c2adb5.jpg', 1500.95),
+(900467921, 'Urethane Basecoat - Purple Metallic 1 Gallon',   43, 'Available',    'paint',         'https://paintforcars.com/wp-content/uploads/2018/10/Purple-Metallic-Auto-Paint-5-570x572-1.jpg', 144.48);
 
 -- ========================
 -- SAMPLE DATA: EMPLOYEES
@@ -206,7 +243,10 @@ INSERT INTO EmployeePerformance (PerformanceID, EmployeeID, ActivelyEmployed, Po
 -- ========================
 -- VERIFY
 -- ========================
+
 SHOW TABLES;
-SELECT COUNT(*) AS UserCount   FROM `User`;
-SELECT COUNT(*) AS PartCount   FROM Parts;
-SELECT COUNT(*) AS EmpCount    FROM Employees;
+SELECT COUNT(*) AS UserCount FROM `User`;
+SELECT COUNT(*) AS PartCount FROM Parts;
+SELECT COUNT(*) AS EmpCount FROM Employees;
+SELECT COUNT(*) AS CarCount FROM Customized_car;
+SELECT COUNT(*) AS CarPartsCount FROM Customized_car_parts;

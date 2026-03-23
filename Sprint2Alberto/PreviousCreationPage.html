@@ -26,6 +26,22 @@
             padding: 20px;
         }
 
+        .history-section {
+            margin-top: 24px;
+        }
+
+        .history-card {
+            border: 1px solid black;
+            padding: 14px;
+            margin-top: 12px;
+            background: #fafafa;
+        }
+
+        .empty-state {
+            color: #444;
+            margin-top: 8px;
+        }
+
         button {
             padding: 12px 20px;
             border: 2px solid black;
@@ -52,6 +68,16 @@
     <h2>Previous Builds Page</h2>
     <p>View previously created vehicle builds here.</p>
 
+    <div class="history-section">
+        <h3>Deleted Builds</h3>
+        <div id="deletedBuilds" class="empty-state">Loading deleted builds...</div>
+    </div>
+
+    <div class="history-section">
+        <h3>Bought Builds</h3>
+        <div id="boughtBuilds" class="empty-state">Loading bought builds...</div>
+    </div>
+
     <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">
         Back to Dashboard
     </button>
@@ -60,6 +86,59 @@
 <footer>
 This is Legacy Auto Comp!!!!! we are excited to bring you a new perspective on creativity and home to build your vision
 </footer>
+
+<script>
+const userId = localStorage.getItem("userId");
+const API_BASE = `${window.location.protocol}//${window.location.hostname}:3000`;
+
+if (!userId) {
+    window.location.replace("/Sprint2Alberto/CustomerSingInPage.html");
+}
+
+function renderBuildSection(containerId, builds, emptyMessage) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+
+    if (!Array.isArray(builds) || builds.length === 0) {
+        container.textContent = emptyMessage;
+        container.className = "empty-state";
+        return;
+    }
+
+    container.className = "";
+
+    builds.forEach((build) => {
+        const partsText = Array.isArray(build.Parts) && build.Parts.length
+            ? build.Parts.map((part) => `${part.Name} (ID: ${part.PartID})`).join(", ")
+            : (build.PartID ? `Part ${build.PartID}` : "None");
+
+        const card = document.createElement("div");
+        card.className = "history-card";
+        card.innerHTML =
+            `<strong>Vehicle:</strong> ${build.BaseCar}` +
+            `<br><strong>Total Price:</strong> $${build.TotalPrice}` +
+            `<br><strong>Parts:</strong> ${partsText}`;
+
+        container.appendChild(card);
+    });
+}
+
+async function loadHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/cars/history/${userId}`);
+        const history = await res.json();
+
+        renderBuildSection("deletedBuilds", history.deleted, "No deleted builds yet.");
+        renderBuildSection("boughtBuilds", history.bought, "No bought builds yet.");
+    } catch (err) {
+        console.error(err);
+        document.getElementById("deletedBuilds").textContent = "Could not load deleted builds.";
+        document.getElementById("boughtBuilds").textContent = "Could not load bought builds.";
+    }
+}
+
+loadHistory();
+</script>
 
 </body>
 </html>

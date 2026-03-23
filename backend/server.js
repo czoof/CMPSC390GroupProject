@@ -164,18 +164,335 @@ app.get("/api/parts", (req, res) => {
 // VEHICLE CUSTOMIZATION ROUTES
 // ==========================================
 
+function enrichCarsWithParts(cars, callback) {
+  if (!cars || cars.length === 0) {
+    return callback(null, []);
+  }
+
+  const hydratedCars = cars.map((car) => ({
+    ...car,
+    Parts: []
+  }));
+
+  const carById = new Map();
+  hydratedCars.forEach((car) => {
+    carById.set(Number(car.CarID), car);
+  });
+
+  const primaryPartIds = [
+    ...new Set(
+      hydratedCars
+        .map((car) => Number(car.PartID))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    )
+  ];
+
+  const hydratePrimaryPartFallback = () => {
+    if (primaryPartIds.length === 0) {
+      return callback(null, hydratedCars);
+    }
+
+    const partSql = "SELECT PartID, Name FROM Parts WHERE PartID IN (?)";
+    db.query(partSql, [primaryPartIds], (partsErr, partRows) => {
+      if (partsErr) {
+        console.error(partsErr);
+        return callback(null, hydratedCars);
+      }
+
+      const partMap = new Map();
+      (partRows || []).forEach((part) => {
+        partMap.set(Number(part.PartID), part.Name || `Part ${part.PartID}`);
+      });
+
+      hydratedCars.forEach((car) => {
+        const pid = Number(car.PartID);
+        if (Number.isInteger(pid) && pid > 0) {
+          car.Parts = [{
+            PartID: pid,
+            Name: partMap.get(pid) || `Part ${pid}`
+          }];
+        }
+      });
+
+      return callback(null, hydratedCars);
+    });
+  };
+
+  const carIds = hydratedCars
+    .map((car) => Number(car.CarID))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (carIds.length === 0) {
+    return hydratePrimaryPartFallback();
+  }
+
+  const partsSql = `
+    SELECT ccp.CarID, p.PartID, p.Name
+    FROM Customized_car_parts ccp
+    JOIN Parts p ON p.PartID = ccp.PartID
+    WHERE ccp.CarID IN (?)
+    ORDER BY ccp.CarID, p.PartID
+  `;
+
+  db.query(partsSql, [carIds], (partsErr, partRows) => {
+    if (partsErr) {
+      if (partsErr.code !== "ER_NO_SUCH_TABLE") {
+        console.error(partsErr);
+      }
+      return hydratePrimaryPartFallback();
+    }
+
+    (partRows || []).forEach((row) => {
+      const car = carById.get(Number(row.CarID));
+      if (!car) {
+        return;
+      }
+
+      car.Parts.push({
+        PartID: Number(row.PartID),
+        Name: row.Name || `Part ${row.PartID}`
+      });
+    });
+
+    hydratedCars.forEach((car) => {
+      if (car.Parts.length === 0) {
+        const pid = Number(car.PartID);
+        if (Number.isInteger(pid) && pid > 0) {
+          car.Parts = [{
+            PartID: pid,
+            Name: `Part ${pid}`
+          }];
+        }
+      }
+    });
+
+    return callback(null, hydratedCars);
+  });
+}
+
+function fetchCarsForUser(userId, statuses, callback) {
+  const normalizedUserId = Number(userId);
+  const normalizedStatuses = (Array.isArray(statuses) ? statuses : [statuses])
+    .filter(Boolean)
+    .map((status) => String(status).toUpperCase());
+
+  const fallbackSql = "SELECT * FROM Customized_car WHERE UserID = ? ORDER BY CarID DESC";
+
+  const runFallbackQuery = () => {
+    db.query(fallbackSql, [normalizedUserId], (fallbackErr, fallbackRows) => {
+      if (fallbackErr) {
+        return callback(fallbackErr);
+      }
+
+      if (normalizedStatuses.length > 0 && !normalizedStatuses.includes("ACTIVE")) {
+        return callback(null, []);
+      }
+
+      return enrichCarsWithParts(fallbackRows, callback);
+    });
+  };
+
+  const statusClause = normalizedStatuses.length
+    ? ` AND BuildStatus IN (${normalizedStatuses.map(() => "?").join(", ")})`
+    : "";
+  const sql = `SELECT * FROM Customized_car WHERE UserID = ?${statusClause} ORDER BY CarID DESC`;
+  const params = [normalizedUserId, ...normalizedStatuses];
+
+  db.query(sql, params, (err, rows) => {
+    if (err) {
+      const missingStatusColumn =
+        err.code === "ER_BAD_FIELD_ERROR" &&
+        String(err.sqlMessage || "").toLowerCase().includes("buildstatus");
+
+      if (missingStatusColumn) {
+        return runFallbackQuery();
+      }
+
+      return callback(err);
+    }
+
+    return enrichCarsWithParts(rows, callback);
+  });
+}
+
 app.get("/cars/:userId", (req, res) => {
   const userId = req.params.userId;
 
-  const sql = "SELECT * FROM Customized_car WHERE UserID = ?";
-
-  db.query(sql, [userId], (err, results) => {
+  fetchCarsForUser(userId, ["ACTIVE"], (err, cars) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ error: "Database error" });
     }
 
-    res.json(results);
+    return res.json(cars);
+  });
+});
+
+app.get("/cars/history/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  fetchCarsForUser(userId, ["DELETED", "BOUGHT"], (err, cars) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Database error" });
+    }
+
+    return res.json({
+      deleted: cars.filter((car) => String(car.BuildStatus || "").toUpperCase() === "DELETED"),
+      bought: cars.filter((car) => String(car.BuildStatus || "").toUpperCase() === "BOUGHT")
+    });
+  });
+});
+
+app.patch("/cars/:carId/status", (req, res) => {
+  const carId = Number(req.params.carId);
+  const userId = Number((req.body && req.body.userId) || req.query.userId);
+  const buildStatus = String((req.body && req.body.buildStatus) || req.query.buildStatus || "").toUpperCase();
+  const allowedStatuses = new Set(["ACTIVE", "DELETED", "BOUGHT"]);
+
+  if (!Number.isInteger(carId) || carId <= 0 || !Number.isInteger(userId) || userId <= 0 || !allowedStatuses.has(buildStatus)) {
+    return res.status(400).json({ message: "Valid carId, userId, and buildStatus are required" });
+  }
+
+  const updateSql = "UPDATE Customized_car SET BuildStatus = ? WHERE CarID = ? AND UserID = ?";
+  db.query(updateSql, [buildStatus, carId, userId], (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Database error while updating configuration status" });
+    }
+
+    if (!result || result.affectedRows === 0) {
+      return res.status(404).json({ message: "Configuration not found" });
+    }
+
+    return res.json({ message: `Configuration marked as ${buildStatus.toLowerCase()}` });
+  });
+});
+
+app.delete("/cars/:carId", (req, res) => {
+  const carId = Number(req.params.carId);
+  const bodyUserId = req.body && req.body.userId;
+  const userId = Number(bodyUserId || req.query.userId);
+
+  if (!Number.isInteger(carId) || carId <= 0 || !Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ message: "Valid carId and userId are required" });
+  }
+
+  const softDeleteSql = "UPDATE Customized_car SET BuildStatus = 'DELETED' WHERE CarID = ? AND UserID = ?";
+  db.query(softDeleteSql, [carId, userId], (deleteErr, result) => {
+    if (deleteErr) {
+      console.error(deleteErr);
+      return res.status(500).json({ message: "Database error while deleting configuration" });
+    }
+
+    if (!result || result.affectedRows === 0) {
+      return res.status(404).json({ message: "Configuration not found" });
+    }
+
+    return res.json({ message: "Configuration moved to deleted builds" });
+  });
+});
+
+app.post("/cars", (req, res) => {
+  const { userId, baseCar, partId, partIds, totalPrice } = req.body;
+
+  if (!userId || !baseCar) {
+    return res.status(400).json({ message: "userId and baseCar are required" });
+  }
+
+  const normalizedPartIds = [
+    ...new Set(
+      (Array.isArray(partIds) ? partIds : [partId])
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    )
+  ].slice(0, 3);
+
+  const primaryPartId = normalizedPartIds[0] || null;
+
+  const sqlWithPart = `
+    INSERT INTO Customized_car (BaseCar, TotalPrice, PartID, UserID)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(sqlWithPart, [baseCar, Number(totalPrice) || 0, primaryPartId, userId], (err, result) => {
+    if (!err) {
+      const carId = result.insertId;
+
+      if (normalizedPartIds.length === 0) {
+        return res.json({
+          message: "Vehicle configuration saved",
+          carId
+        });
+      }
+
+      const createCarPartsTableSql = `
+        CREATE TABLE IF NOT EXISTS Customized_car_parts (
+          CarID INT NOT NULL,
+          PartID INT NOT NULL,
+          PRIMARY KEY (CarID, PartID),
+          FOREIGN KEY (CarID) REFERENCES Customized_car(CarID) ON DELETE CASCADE,
+          FOREIGN KEY (PartID) REFERENCES Parts(PartID)
+        )
+      `;
+
+      db.query(createCarPartsTableSql, (tableErr) => {
+        if (tableErr) {
+          console.error(tableErr);
+          return res.json({
+            message: "Vehicle configuration saved",
+            carId
+          });
+        }
+
+        const values = normalizedPartIds.map((pid) => [carId, pid]);
+        const insertCarPartsSql = "INSERT IGNORE INTO Customized_car_parts (CarID, PartID) VALUES ?";
+
+        db.query(insertCarPartsSql, [values], (partsErr) => {
+          if (partsErr) {
+            console.error(partsErr);
+          }
+
+          return res.json({
+            message: "Vehicle configuration saved",
+            carId
+          });
+        });
+      });
+
+      return;
+    }
+
+    const isMissingPartIdColumn =
+      err &&
+      (err.code === "ER_BAD_FIELD_ERROR" ||
+        String(err.sqlMessage || "").toLowerCase().includes("unknown column") ||
+        String(err.sqlMessage || "").includes("PartID"));
+
+    if (!isMissingPartIdColumn) {
+      console.error(err);
+      return res.status(500).json({
+        message: err.sqlMessage || "Database error while saving configuration"
+      });
+    }
+
+    // Fallback for local schemas that do not include PartID in Customized_car.
+    const sqlNoPart = `
+      INSERT INTO Customized_car (BaseCar, TotalPrice, UserID)
+      VALUES (?, ?, ?)
+    `;
+
+    db.query(sqlNoPart, [baseCar, Number(totalPrice) || 0, userId], (fallbackErr, fallbackResult) => {
+      if (fallbackErr) {
+        console.error(fallbackErr);
+        return res.status(500).json({ message: "Database error while saving configuration" });
+      }
+
+      res.json({
+        message: "Vehicle configuration saved",
+        carId: fallbackResult.insertId
+      });
+    });
   });
 });
 

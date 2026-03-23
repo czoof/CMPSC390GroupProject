@@ -26,6 +26,38 @@
             padding: 20px;
         }
 
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        select {
+            width: 100%;
+            max-width: 520px;
+            padding: 8px;
+            border: 1px solid #777;
+            background: #fff;
+        }
+
+        .summary {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px solid #777;
+            background: #f7f7f7;
+            max-width: 520px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
         button {
             padding: 12px 20px;
             border: 2px solid black;
@@ -50,16 +82,175 @@
 
 <div class="content-box">
     <h2>Vehicle Creation Page</h2>
-    <p>Create and customize your vehicle here.</p>
+    <p>Quickly create and save a basic vehicle configuration.</p>
 
-    <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">
-        Back to Dashboard
-    </button>
+    <div class="form-row">
+        <label for="baseCar">Base Car</label>
+        <select id="baseCar">
+            <option value="Sedan">Sedan</option>
+            <option value="SUV">SUV</option>
+            <option value="Truck">Truck</option>
+            <option value="Coupe">Coupe</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="partSelect1">Part 1 (optional)</label>
+        <select id="partSelect1">
+            <option value="">No part selected</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="partSelect2">Part 2 (optional)</label>
+        <select id="partSelect2">
+            <option value="">No part selected</option>
+        </select>
+    </div>
+
+    <div class="form-row">
+        <label for="partSelect3">Part 3 (optional)</label>
+        <select id="partSelect3">
+            <option value="">No part selected</option>
+        </select>
+    </div>
+
+    <div class="summary" id="summaryBox">
+        <div><strong>Base Car:</strong> <span id="sumBase">Sedan</span></div>
+        <div><strong>Parts:</strong> <span id="sumPart">None</span></div>
+        <div><strong>Total:</strong> $<span id="sumTotal">25000.00</span></div>
+    </div>
+
+    <p id="saveResult"></p>
+
+    <div class="actions">
+        <button id="saveBtn">Save Configuration</button>
+        <button onclick="window.location.href='/Sprint2-Charles/SavedConfigurations.html?userId=' + localStorage.getItem('userId')">View Saved Configurations</button>
+        <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">Back to Dashboard</button>
+    </div>
 </div>
 
 <footer>
 This is Legacy Auto Comp!!!!! we are excited to bring you a new perspective on creativity and home to build your vision
 </footer>
+
+<script>
+const BASE_PRICE = 25000;
+const API_BASE = `${window.location.protocol}//${window.location.hostname}:3000`;
+const userId = localStorage.getItem("userId");
+const baseCarEl = document.getElementById("baseCar");
+const partSelectEls = [
+    document.getElementById("partSelect1"),
+    document.getElementById("partSelect2"),
+    document.getElementById("partSelect3")
+];
+const saveResultEl = document.getElementById("saveResult");
+
+let selectedParts = [null, null, null];
+
+if (!userId) {
+    window.location.replace("/Sprint2Alberto/CustomerSingInPage.html");
+}
+
+function updateSummary() {
+    const chosenParts = selectedParts.filter(Boolean);
+    const partNames = chosenParts.length ? chosenParts.map(p => p.Name).join(", ") : "None";
+    const partsTotal = chosenParts.reduce((sum, p) => sum + Number(p.Price || 0), 0);
+    const total = BASE_PRICE + partsTotal;
+
+    document.getElementById("sumBase").textContent = baseCarEl.value;
+    document.getElementById("sumPart").textContent = partNames;
+    document.getElementById("sumTotal").textContent = total.toFixed(2);
+}
+
+async function loadParts() {
+    try {
+        const res = await fetch(`${API_BASE}/parts`);
+        const parts = await res.json();
+
+        partSelectEls.forEach(selectEl => {
+            parts.forEach(part => {
+                const opt = document.createElement("option");
+                opt.value = String(part.PartID);
+                opt.textContent = `${part.Name || ("Part " + part.PartID)} ($${Number(part.Price || 0).toFixed(2)})`;
+                opt.dataset.name = part.Name || ("Part " + part.PartID);
+                opt.dataset.price = String(part.Price || 0);
+                selectEl.appendChild(opt);
+            });
+        });
+    } catch (e) {
+        console.error(e);
+        saveResultEl.textContent = "Could not load parts list.";
+        saveResultEl.style.color = "red";
+    }
+}
+
+partSelectEls.forEach((selectEl, idx) => {
+    selectEl.addEventListener("change", () => {
+        const selectedOption = selectEl.options[selectEl.selectedIndex];
+        if (!selectEl.value) {
+            selectedParts[idx] = null;
+        } else {
+            selectedParts[idx] = {
+                PartID: selectEl.value,
+                Name: selectedOption.dataset.name,
+                Price: Number(selectedOption.dataset.price || 0)
+            };
+        }
+        updateSummary();
+    });
+});
+
+baseCarEl.addEventListener("change", updateSummary);
+
+document.getElementById("saveBtn").addEventListener("click", async () => {
+    const chosenParts = selectedParts.filter(Boolean);
+    const uniquePartIds = [...new Set(chosenParts.map(p => String(p.PartID)))];
+    const total = BASE_PRICE + chosenParts.reduce((sum, p) => sum + Number(p.Price || 0), 0);
+
+    try {
+        const res = await fetch(`${API_BASE}/cars`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId,
+                baseCar: baseCarEl.value,
+                partIds: uniquePartIds,
+                partId: uniquePartIds[0] || null,
+                totalPrice: total
+            })
+        });
+
+        const text = await res.text();
+        let data = {};
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch {
+            data = { message: text || "Unexpected server response" };
+        }
+
+        if (!res.ok) {
+            if (res.status === 404) {
+                saveResultEl.textContent = "Save route not found (Cannot POST /cars). Restart backend server so latest routes load.";
+            } else {
+                saveResultEl.textContent = data.message || "Could not save configuration.";
+            }
+            saveResultEl.style.color = "red";
+            return;
+        }
+
+        saveResultEl.textContent = "Configuration saved successfully.";
+        saveResultEl.style.color = "green";
+    } catch (e) {
+        console.error(e);
+        saveResultEl.textContent = "Server error while saving configuration.";
+        saveResultEl.style.color = "red";
+    }
+});
+
+loadParts();
+updateSummary();
+</script>
 
 </body>
 </html>

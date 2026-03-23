@@ -32,6 +32,13 @@
       padding: 10px 0;
     }
 
+    .car-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
     button {
       padding: 12px 20px;
       border: 2px solid black;
@@ -77,12 +84,29 @@ This is Legacy Auto Comp!!!!! we are excited to bring you a new perspective on c
 <script>
 
 const userId = localStorage.getItem("userId");
+const API_BASE = `${window.location.protocol}//${window.location.hostname}:3000`;
+
+async function updateBuildStatus(carId, buildStatus) {
+  const response = await fetch(`${API_BASE}/cars/${carId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId,
+      buildStatus
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(errText || "Status update failed");
+  }
+}
 
 async function loadCars() {
 
   try {
 
-    const res = await fetch("/cars/" + userId);
+    const res = await fetch(`${API_BASE}/cars/` + userId);
     const cars = await res.json();
 
     const container = document.getElementById("carsList");
@@ -98,12 +122,59 @@ async function loadCars() {
       const div = document.createElement("div");
       div.className = "car";
 
+      const partsText = Array.isArray(c.Parts) && c.Parts.length
+        ? c.Parts.map(p => `${p.Name} (ID: ${p.PartID})`).join(", ")
+        : (c.PartID ? `Part ${c.PartID}` : "None");
+
       div.innerHTML =
         "<strong>Vehicle:</strong> " + c.BaseCar +
         "<br><strong>Total Price:</strong> $" + c.TotalPrice +
-        "<br><strong>Part ID:</strong> " + c.PartID;
+        "<br><strong>Parts:</strong> " + partsText;
+
+      const actions = document.createElement("div");
+      actions.className = "car-actions";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.textContent = "Remove Build";
+      removeBtn.addEventListener("click", async () => {
+        const confirmed = window.confirm("Remove this saved configuration?");
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          const deleteRes = await fetch(`${API_BASE}/cars/${c.CarID}?userId=${encodeURIComponent(userId)}`, {
+            method: "DELETE"
+          });
+
+          if (!deleteRes.ok) {
+            const errText = await deleteRes.text();
+            throw new Error(errText || "Delete failed");
+          }
+
+          await loadCars();
+        } catch (deleteErr) {
+          console.error(deleteErr);
+          alert("Could not remove configuration right now.");
+        }
+      });
+
+      const buyBtn = document.createElement("button");
+      buyBtn.textContent = "Mark as Bought";
+      buyBtn.addEventListener("click", async () => {
+        try {
+          await updateBuildStatus(c.CarID, "BOUGHT");
+          await loadCars();
+        } catch (buyErr) {
+          console.error(buyErr);
+          alert("Could not move configuration to bought builds right now.");
+        }
+      });
 
       container.appendChild(div);
+      actions.appendChild(removeBtn);
+      actions.appendChild(buyBtn);
+      container.appendChild(actions);
 
     });
 
