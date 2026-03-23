@@ -299,9 +299,10 @@ app.get("/getPoints", (req, res) => {
 });
 
 app.post("/request-dayoff", (req, res) => {
-    const { EmployeeID, MonthNum, WeekNum, DayOfWeek, Reason } = req.body;
-    const sql = `INSERT INTO TimeOffRequests (EmployeeID, MonthNum, WeekNum, DayOfWeek, Reason) VALUES (?, ?, ?, ?, ?)`;
-    db.query(sql, [EmployeeID, MonthNum, WeekNum, DayOfWeek, Reason], (err) => {
+    console.log(req.body);   
+    const { EmployeeID, MonthNum, WeekNum, DayOfWeek, Reason , Type } = req.body;
+    const sql = `INSERT INTO TimeOffRequests (EmployeeID, MonthNum, WeekNum, DayOfWeek, Reason, Type) VALUES (?, ?, ?, ?, ?, ?)`;
+    db.query(sql, [EmployeeID, MonthNum, WeekNum, DayOfWeek, Reason, Type], (err) => {
         if (err){
             console.error(err);
             return res.status(500).send("Request failed");
@@ -351,40 +352,42 @@ app.get("/contactInfo", (req, res)=>{
 
         app.post("/approveRequest",(req,res)=>{
             const {RequestID} = req.body;
-            const getRequest = `SELECT EmployeeID, MonthNum, WeekNum, DayOfWeek FROM TimeOffRequests WHERE RequestID = ?`;
+            const getRequest = `SELECT EmployeeID, MonthNum, WeekNum, DayOfWeek, Type FROM TimeOffRequests WHERE RequestID = ?`;
             db.query(getRequest,[RequestID],(err,results)=>{
                 if(err){
                     console.error(err);
                     return res.send("Database error");
                 }
                 const request = results[0];
-                console.log("Request info:", request);
+                if (results.length === 0) {
+                  return res.send("Request not found");
+                }
 
+                console.log("Request info:", request);
+                console.log("Type:", request.Type);
+                console.log("DayColumn:", request.DayOfWeek);
+                console.log("Computed value:", request.Type === "work" ? 1 : 0);
+
+                /*let value = request.Type === "work" ? 1 : 0;*/
+                let type = (request.Type || "").trim().toLowerCase();
+                let value = type === "work" ? 1 : 0;
                 let dayColumn = request.DayOfWeek;
 
-        if(dayColumn === "Monday") dayColumn = "Mon";
-        if(dayColumn === "Tuesday") dayColumn = "Tue";
-        if(dayColumn === "Wednesday") dayColumn = "Wed";
-        if(dayColumn === "Thursday") dayColumn = "Thu";
-        if(dayColumn === "Friday") dayColumn = "Fri";
-        if(dayColumn === "Saturday") dayColumn = "Sat";
-        if(dayColumn === "Sunday") dayColumn = "Sun";
-
-        const updateSchedule = `UPDATE Schedule SET ${dayColumn} = 0 WHERE EmployeeID = ? AND MonthNum = ? AND WeekNum = ?`;
+        const updateSchedule = `UPDATE Schedule SET ${dayColumn} = ? WHERE EmployeeID = ? AND MonthNum = ? AND WeekNum = ?`;
                 db.query(updateSchedule,
-                [request.EmployeeID, request.MonthNum, request.WeekNum],
-                (err)=>{
+                [value, request.EmployeeID, request.MonthNum, request.WeekNum],
+                (err,result)=>{
                     if(err){
                         console.error(err);
                         return res.send("Schedule update error");
                     }
+                    console.log("Rows affected:", result.affectedRows);
+
                     const updateStatus = `UPDATE TimeOffRequests SET Status = 'Approved' WHERE RequestID = ?`;
                     db.query(updateStatus,[RequestID]);
                     res.send("Approved");
                 });
-
             });
-
         });
 
         app.post("/denyRequest",(req,res)=>{
