@@ -71,8 +71,8 @@
 
                 // Redirect based on manager status
                 const redirectUrl = data.isManager 
-                    ? "/Sprint2Alberto/ManagerDashboardPage.html" 
-                    : "/Sprint2Alberto/EmployeeDashboardPage.html";
+                    ? `/Sprint2Alberto/ManagerDashboardPage.html?EmployeeID=${data.employeeId}&name=${encodeURIComponent(data.firstName + ' ' + data.lastName)}`
+                    : `/Sprint2Alberto/EmployeeDashboardPage.html?EmployeeID=${data.employeeId}&name=${encodeURIComponent(data.firstName + ' ' + data.lastName)}`;
                 
                 setTimeout(() => window.location.replace(redirectUrl), 500);
 
