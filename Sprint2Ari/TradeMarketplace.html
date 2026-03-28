@@ -78,21 +78,70 @@ return parseInt(localStorage.getItem("userId"), 10);
 }
 
 const activeUserId = getCurrentUserId();
+const expandedTradeIds = new Set();
+const offerDrafts = {};
+let isLoadingTrades = false;
+let lastTradesSnapshot = "";
 if(!activeUserId){
 window.location.href = "TradeLogin.html";
 }
 
-function loadTrades(){
+function isTypingOfferInput(){
+const active = document.activeElement;
+return active && active.id && active.id.startsWith("offer");
+}
 
-fetch("/trades")
-.then(res => res.json())
-.then(data => {
+function captureOfferDrafts(){
+document.querySelectorAll("input[id^='offer']").forEach(input => {
+offerDrafts[input.id] = input.value;
+});
+}
+
+function restoreOfferDrafts(){
+Object.keys(offerDrafts).forEach(inputId => {
+const input = document.getElementById(inputId);
+if (input && input.value !== offerDrafts[inputId]) {
+input.value = offerDrafts[inputId];
+}
+});
+}
+
+async function requestJson(url, options = {}){
+const response = await fetch(url, options);
+const data = await response.json();
+
+if (!response.ok) {
+throw new Error(data.message || data.error || "Request failed");
+}
+
+return data;
+}
+
+function buildTradesSnapshot(trades){
+return JSON.stringify(trades.map(trade => ({
+TradeID: trade.TradeID,
+OwnerUserID: trade.OwnerUserID,
+OfferedPartID: trade.OfferedPartID,
+DesiredMinPrice: trade.DesiredMinPrice,
+DesiredMaxPrice: trade.DesiredMaxPrice,
+ConditionDescription: trade.ConditionDescription,
+ImageURL: trade.ImageURL,
+PartName: trade.PartName,
+UserName: trade.UserName
+})));
+}
+
+function renderTrades(data){
 
 let output = "";
+const currentUser = activeUserId;
+
+if (!data.length) {
+document.getElementById("trades").innerHTML = "<p>No open trades right now.</p>";
+return;
+}
 
 data.forEach(trade => {
-
-const currentUser = activeUserId;
 
 output += `
 <img src="${trade.ImageURL}" width="200"><br>
@@ -129,23 +178,72 @@ output += `<hr>`;
 
 document.getElementById("trades").innerHTML = output;
 
+restoreOfferDrafts();
+
+document.querySelectorAll("input[id^='offer']").forEach(input => {
+input.addEventListener("input", () => {
+offerDrafts[input.id] = input.value;
+});
 });
 
+expandedTradeIds.forEach(tradeId => {
+if (document.getElementById("offers" + tradeId)) {
+viewOffers(tradeId, true);
+}
+});
 }
 
-function acceptTrade(id){
+function loadTrades(force = false){
 
-fetch("/acceptTrade/" + id, {
-method: "POST"
+if (isLoadingTrades) {
+return;
+}
+
+captureOfferDrafts();
+isLoadingTrades = true;
+
+requestJson("/trades")
+.then(data => {
+const snapshot = buildTradesSnapshot(data);
+
+if (!force && snapshot === lastTradesSnapshot) {
+expandedTradeIds.forEach(tradeId => {
+if (document.getElementById("offers" + tradeId)) {
+viewOffers(tradeId, true);
+}
+});
+return;
+}
+
+lastTradesSnapshot = snapshot;
+renderTrades(data);
+
 })
-.then(res => res.json())
-.then(data => alert(data.message));
+.catch(err => {
+document.getElementById("trades").innerHTML = `<p>${err.message}</p>`;
+})
+.finally(() => {
+isLoadingTrades = false;
+});
 
 }
 
 function createTrade(){
 
-fetch("/createTrade", {
+const minPrice = document.getElementById("minPrice").value;
+const maxPrice = document.getElementById("maxPrice").value;
+
+if (!document.getElementById("partID").value) {
+alert("Select a part first.");
+return;
+}
+
+if (!minPrice || !maxPrice) {
+alert("Enter both minimum and maximum price.");
+return;
+}
+
+requestJson("/createTrade", {
 
 method: "POST",
 
@@ -171,19 +269,17 @@ ImageURL: document.getElementById("imageURL").value
 
 })
 
-.then(res => res.json())
-
 .then(data => {
 alert(data.message);
 loadTrades();
-});
+})
+.catch(err => alert(err.message));
 
 }
 /* Code that is used for drop down selection for part id when a trade is being created*/
 function loadParts(){
 
-fetch("/parts")
-.then(res => res.json())
+requestJson("/parts")
 .then(data => {
 
 let options = "";
@@ -196,6 +292,9 @@ options += `<option value="${part.PartID}">${part.PartName}</option>`;
 
 document.getElementById("partID").innerHTML = options;
 
+})
+.catch(err => {
+document.getElementById("partID").innerHTML = `<option value="">${err.message}</option>`;
 });
 
 }
@@ -207,7 +306,12 @@ function submitOffer(tradeId){
 
 const description = document.getElementById("offer" + tradeId).value;
 
-fetch("/createOffer", {
+if (!description.trim()) {
+alert("Describe your trade offer first.");
+return;
+}
+
+requestJson("/createOffer", {
 
 method: "POST",
 
@@ -224,25 +328,31 @@ OfferedPartDescription: description
 })
 
 })
-
-.then(res => res.json())
 .then(data => {
+delete offerDrafts["offer" + tradeId];
 alert(data.message);
 loadTrades();
-});
+})
+.catch(err => alert(err.message));
 
 }
 
 /*Function that allows the original poster of a trade to accept or decline what someone is requesting to trade */
-function viewOffers(tradeId){
+function viewOffers(tradeId, keepOpen = false){
 
-fetch("/offers/" + tradeId)
+expandedTradeIds.add(tradeId);
 
-.then(res => res.json())
+requestJson("/offers/" + tradeId)
 
 .then(data => {
 
 let output = "<h4>Offers:</h4>";
+
+if (!data.length) {
+output += "<p>No offers yet.</p>";
+document.getElementById("offers" + tradeId).innerHTML = output;
+return;
+}
 
 data.forEach(offer => {
 
@@ -260,26 +370,32 @@ output += `
 
 document.getElementById("offers" + tradeId).innerHTML = output;
 
+})
+.catch(err => {
+if (!keepOpen) {
+expandedTradeIds.delete(tradeId);
+}
+document.getElementById("offers" + tradeId).innerHTML = `<p>${err.message}</p>`;
 });
 
 }
 
 function declineOffer(offerId){
 
-fetch("/declineOffer/" + offerId, {
+requestJson("/declineOffer/" + offerId, {
 method: "POST"
 })
-.then(res => res.json())
 .then(data => {
 alert(data.message);
 loadTrades();
-});
+})
+.catch(err => alert(err.message));
 
 }
 
 function acceptOffer(offerId){
 
-fetch("/acceptOffer/" + offerId,{
+requestJson("/acceptOffer/" + offerId,{
 method:"POST",
 headers: {
 "Content-Type": "application/json"
@@ -288,14 +404,16 @@ body: JSON.stringify({
 userId: activeUserId
 })
 })
-.then(res => res.json())
 .then(data => {
 
 showTradeMessage(data.message);
 
+expandedTradeIds.clear();
+
 loadTrades();
 
-});
+})
+.catch(err => alert(err.message));
 
 }
 
@@ -305,14 +423,15 @@ if(!confirm("Remove all trades and offers?")){
 return;
 }
 
-fetch("/clearTrades", {
+requestJson("/clearTrades", {
 method: "POST"
 })
-.then(res => res.json())
 .then(data => {
 showTradeMessage(data.message || "All trades removed.");
+expandedTradeIds.clear();
 loadTrades();
-});
+})
+.catch(err => alert(err.message));
 
 }
 
@@ -343,7 +462,11 @@ document.getElementById("tradeMessage").style.display = "none";
 }
 
 loadTrades();
-setInterval(loadTrades, 3000);
+setInterval(() => {
+if (!isTypingOfferInput()) {
+loadTrades();
+}
+}, 3000);
 </script>
 
 </body>
