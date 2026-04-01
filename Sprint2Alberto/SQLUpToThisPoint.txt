@@ -1,5 +1,5 @@
 
-/*first instance FRANCISCO*/ 
+--first instance FRANCISCO 
 CREATE DATABASE IF NOT EXISTS legautocustDB;
 
 USE legautocustDB;
@@ -31,7 +31,7 @@ CREATE TABLE Customized_car
 (
   BaseCar VARCHAR(50) NOT NULL,
   TotalPrice INT NOT NULL,
-  PartID INT NOT NULL,
+  PartsID INT NOT NULL,
   UserID INT NOT NULL,
   PRIMARY KEY (BaseCar),
   FOREIGN KEY (PartID) REFERENCES Parts(PartID),
@@ -181,144 +181,16 @@ VALUES    --Wk M  T  W  T  F  S  S
 
 
 CREATE TABLE EmployeePerformance (
-    PerformanceID VARCHAR(4) PRIMARY KEY,
-    EmployeeID VARCHAR(4) NOT NULL,
+    PerformanceID INT PRIMARY KEY,
+    EmployeeID INT NOT NULL,
     ActivelyEmployed BOOLEAN DEFAULT TRUE,
     Points INT NOT NULL DEFAULT 0,
     Comments TEXT,
     FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
 );
+
 INSERT INTO EmployeePerformance (PerformanceID, EmployeeID, ActivelyEmployed, Points, Comments)
 Values
-('BA01','A001', TRUE, 0,'Great Employee'),
-('BA02','A002', TRUE, 1, 'Efficient'),
-('BA03','A003', TRUE, 1,'Next in line'),
-('BA04','A004', FALSE, 10, 'Do Not Rehire'),
-('BA05','A005', TRUE, 2,'Great Employee'),
-('BA06','A006', TRUE, 5, 'Attendance Issues'),
-('BA07','A007', TRUE, 4,'HardWorker'),
-('BA08','A008', TRUE, 1, 'Efficient'),
-('BA09','A009', TRUE, 1,'Fast Worker'),
-('BA0A','A00A', FALSE, 10, 'Do Not Rehire');
-
-
-
-
-CREATE TABLE TimeOffRequests (
-    RequestID INT AUTO_INCREMENT PRIMARY KEY,
-    EmployeeID VARCHAR(4) NOT NULL,
-    MonthNum INT NOT NULL,
-    WeekNum INT NOT NULL,
-    DayOfWeek VARCHAR(3) NOT NULL,
-    Reason TEXT,
-    Status VARCHAR(20) DEFAULT 'Pending',
-
-    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
-);
-
-/*This inserts 1 into everyones shecdule for months 2-6 */
-INSERT INTO Schedule (ScheduleID, EmployeeID, MonthNum, WeekNum, Sun, Mon, Tue, Wed, Thu, Fri, Sat)
-SELECT 
-    CONCAT(prefix, month, week) AS ScheduleID,
-    empID,
-    month AS MonthNum,
-    week AS WeekNum,
-    1,1,1,1,1,1,1
-
-FROM (
-    SELECT 'AA' AS prefix, 'A001' AS empID UNION
-    SELECT 'AB', 'A002' UNION
-    SELECT 'AC', 'A003' UNION
-    SELECT 'AD', 'A004' UNION
-    SELECT 'AE', 'A005' UNION
-    SELECT 'AF', 'A006' UNION
-    SELECT 'AG', 'A007' UNION
-    SELECT 'AH', 'A008' UNION
-    SELECT 'AI', 'A009' UNION
-    SELECT 'AJ', 'A00A'
-) employees
-
-CROSS JOIN (
-    SELECT 2 AS month UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
-) months
-
-CROSS JOIN (
-    SELECT 1 AS week UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
-) weeks;
-
-/*This is for the time off request to add a way to either request off or work*/
-ALTER TABLE TimeOffRequests
-ADD Type VARCHAR(10);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*DO NOT NEED TO INCLUDE THIS BOTTOM DOWN*/
-/*This returns the full name of fired employees and their comments*/
-SELECT Employees.FirstName, Employees.Lastname, EmployeePerformance.Comments
-FROM Employees
-Join EmployeePerformance ON Employees.EmployeeID = EmployeePerformance.EmployeeID
-Where EmployeePerformance.ActivelyEmployed = FALSE;
-
-/*This would increase the pay of everyone say yearly raise of 3%*/
-UPDATE Employees
-SET	HourlyPay = HourlyPay * 1.03;
-
-
-/*This could would update the pay of 1 individual by using a first and last name*/
-UPDATE Employees
-SET HourlyPay = HourlyPay + 5.00
-WHERE FirstName = 'John'
-AND LastName = 'Dowtry';
-/*IF you want to assin by empID so if two share a name*/
-UPDATE Employees
-SET HourlyPay = HourlyPay + 5.00
-WHERE EmployeeID = 1;
-
-/*Manager adding points to a bad employee for missing a day*/
-UPDATE EmployeePerformance
-JOIN Employees
-ON EmployeePerformance.EmployeeID = Employees.EmployeeID
-SET EmployeePerformance.Points =  EmployeePerformance.Points + 1
-WHERE Employees.EmployeeID = 0002;
-
-/*Select statement can be used to return the name EmpID and their points
-SELECT  Employees.FirstName, Employees.EmployeeID, EmployeePerformance.Points
-FROM EmployeePerformance
-Join Employees 
-ON EmployeePerformance.EmployeeID = Employees.EmployeeID
-Where Employees.EmployeeID = 2;
+(2001, 0001, TRUE, 0, ''),
+(2002, 0002, TRUE, 3, 'Attendance Issue.'),
+(2003, 0003, FALSE, 10, 'DO NOT REHIRE!!!');
