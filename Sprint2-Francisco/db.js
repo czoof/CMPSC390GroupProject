@@ -1,19 +1,18 @@
 const mysql = require("mysql2");
-require("dotenv").config();
 
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "",//put your MySQL root password here if you set one
+  password: "Window142026",
   database: "legautocustDB"
 });
 
 db.connect((err) => {
   if (err) {
-    console.log("DB connection failed:", err);
-    return;
+    console.error("Database connection failed:", err);
+  } else {
+    console.log("Connected to MySQL");
   }
-  console.log("Connected to MySQL database.");
 });
 
 module.exports = db;
