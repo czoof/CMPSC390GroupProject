@@ -247,9 +247,14 @@ function addExtraOption() {
     defaultOpt.value = "";
     defaultOpt.textContent = "Select Option";
     select.appendChild(defaultOpt);
-
     
+    const excludedCategories = ["paint", "wheel", "rims", "car"];
+
     allParts.forEach(part => {
+        const category = part.Category?.toLowerCase();
+        if (excludedCategories.includes(part.Category)) {
+            return;
+        }
         const opt = document.createElement("option");
         opt.value = String(part.PartID);
         opt.textContent = `${part.Name} ($${Number(part.Price).toFixed(2)})`;
@@ -272,12 +277,14 @@ function addExtraOption() {
     div.appendChild(removeBtn); 
 
     container.appendChild(div);
+    refreshAllDropdowns();
 }
 
 
 document.addEventListener("change", (e) => {
     if (e.target.tagName === "SELECT") {
         updateSummary();
+        refreshAllDropdowns();
     }
 });
 
@@ -306,6 +313,47 @@ document.getElementById("baseCar").addEventListener("change", updateCarPreview);
 document.getElementById("carColor").addEventListener("change", updateCarPreview);
 document.getElementById("carRims").addEventListener("change", updateCarPreview);
 
+function getSelectedPartIds() {
+    const selects = document.querySelectorAll("#extraOptions select");
+    const selected = new Set();
+    selects.forEach(select => {
+        if (select.value) {
+            selected.add(select.value);
+        }
+    });
+
+    return selected;
+}
+
+
+function refreshAllDropdowns() {
+    const selectedIds = getSelectedPartIds();
+    const selects = document.querySelectorAll("#extraOptions select");
+    selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = `<option value="">Select Option</option>`;
+        const excludedCategories = ["paint", "rims", "car"];
+        allParts.forEach(part => {
+            const category = part.Category?.toLowerCase();
+            if (excludedCategories.includes(category)) return;
+            if (selectedIds.has(String(part.PartID)) && String(part.PartID) !== currentValue) {
+                return;
+            }
+
+            const opt = document.createElement("option");
+            opt.value = String(part.PartID);
+            opt.textContent = `${part.Name} ($${Number(part.Price).toFixed(2)})`;
+            opt.dataset.name = part.Name;
+            opt.dataset.price = part.Price;
+
+            if (String(part.PartID) === currentValue) {
+                opt.selected = true;
+            }
+
+            select.appendChild(opt);
+        });
+    });
+}
 loadParts();
 updateSummary();
 </script>
