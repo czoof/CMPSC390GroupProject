@@ -1,0 +1,20 @@
+USE legautocustDB;
+INSERT INTO Parts (PartID, Name, Stock, Availability, Category, Image, Price) VALUES
+
+/*Car Model*/
+(17277633, 'Muscle Base', 9, 'Available', 'car', '/Sprint4-Alberto/car-images/Muscle_white_basic.png', 32000),
+(83451953, 'SUV Base', 7, 'Available', 'car', '/Sprint4-Alberto/car-images/SUV_white_basic.png', 30000),
+(93469582, 'Truck Base', 6, 'Available', 'car', '/Sprint4-Alberto/car-images/Truck_white_basic.png', 32000),
+(22782485, 'Coupe Base', 4, 'Available', 'car', '/Sprint4-Alberto/car-images/Coupe_white_basic.png', 28000),
+
+/*Paint*/
+(26501480, 'White Paint', 20, 'Available', 'paint', '/Sprint4-Alberto/car-paints/white.png', 100),
+(18066938, 'Black Paint', 20, 'Available', 'paint', '/Sprint4-Alberto/car-paints/black.png', 115),
+(29367808, 'Neon Purple Paint', 15, 'Available', 'paint', '/Sprint4-Alberto/car-paints/purple.png', 130),
+(28056391, 'Neon Green Paint', 15, 'Available', 'paint', '/Sprint4-Alberto/car-paints/green.png', 145),
+
+/*Rims*/
+(85052968, 'Black Sport Rims', 15, 'Available', 'rims', '/Sprint4-Alberto/car-rims/blackSport.png', 1200),
+(82890043, 'Grey Sport Rims', 15, 'Available', 'rims', '/Sprint4-Alberto/car-rims/greySport.png', 1200),
+(99057491, 'Bronze Offroad Rims', 10, 'Available', 'rims', '/Sprint4-Alberto/car-rims/bronzeOffRoad.png', 1500),
+(1779980,  'Offroad Black Rims', 10, 'Available', 'rims', '/Sprint4-Alberto/car-rims/OffRoadBlack.png', 1400);

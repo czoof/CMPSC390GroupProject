@@ -40,6 +40,7 @@
     <div class="form-row">
         <label for="baseCar">Base Car</label>
         <select id="baseCar">
+            <option value="">Select Car</option>
             <option value="Muscle">Muscle</option>
             <option value="SUV">SUV</option>
             <option value="Truck">Truck</option>
@@ -61,10 +62,10 @@
     <label for="carRims">Car Rims</label>
     <select id="carRims" required>
         <option value="">Select Rims</option>
-        <option value="sport-black">Sport Black</option>
-        <option value="sport-silver">Sport Silver</option>
-        <option value="offroad-black">Offroad Black</option>
-        <option value="offroad-bronze">Offroad Bronze</option>
+        <option value="blackSport">Sport Black</option>
+        <option value="greySport">Sport Silver</option>
+        <option value="offRoadBlack">Offroad Black</option>
+        <option value="bronzeOffRoad">Offroad Bronze</option>
     </select>
 </div>
 
@@ -280,6 +281,30 @@ document.addEventListener("change", (e) => {
     }
 });
 
+
+function updateCarPreview() {
+    const baseCar = document.getElementById("baseCar").value;
+    const color = document.getElementById("carColor").value;
+    const rims = document.getElementById("carRims").value;
+
+    if (!baseCar || !color) return;
+    let imageName;
+    if (!rims) {
+        imageName = `${baseCar}_${color}_basic.png`;
+    } else {
+        imageName = `${baseCar}_${color}_${rims}.png`;
+    }
+
+    document.getElementById("carPreview").innerHTML = `
+        <img src="/Sprint4-Alberto/car-images/${imageName}" 
+             style="width:300px;"
+             onerror="this.src='/Sprint4-Alberto/car-images/${baseCar}_${color}_basic.png'">
+    `;
+}
+
+document.getElementById("baseCar").addEventListener("change", updateCarPreview);
+document.getElementById("carColor").addEventListener("change", updateCarPreview);
+document.getElementById("carRims").addEventListener("change", updateCarPreview);
 
 loadParts();
 updateSummary();
