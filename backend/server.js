@@ -9,9 +9,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ==========================================
+// =========================================
 // ROOT & TEST ROUTES
-// ==========================================
+// =========================================
 
 app.get("/test", (req, res) => {
   res.send("Backend server is running successfully.");
@@ -115,9 +115,9 @@ app.get("/customer/:id", (req, res) => {
   });
 });
 
-// ==========================================
+// =========================================
 // PARTS ROUTES
-// ==========================================
+// =========================================
 
 app.get("/parts", (req, res) => {
   const sql = "SELECT * FROM Parts";
