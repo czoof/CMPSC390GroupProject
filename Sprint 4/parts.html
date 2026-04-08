@@ -13,6 +13,11 @@
     #cartContainer { border: 1px solid #ffcf8f; padding: 10px; margin-top: 10px; }
     .cart-item { display: flex; justify-content: space-between; margin-bottom: 5px; }
     button { padding: 5px 10px; cursor: pointer; }
+    #reviewsList {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
   </style>
 </head>
 <body>
@@ -40,7 +45,9 @@
 <script>
 let parts = [];
 let cart = [];
-
+let currentPartName = "";
+//let currentPage = 1;
+//const reviewsPerPage = 5;
 // Fetch parts from backend
 function fetchParts() {
   let url = "http://localhost:3000/api/parts?";
@@ -181,7 +188,7 @@ function openReviews(partId, partName) {
   document.getElementById("reviewTitle").textContent = "Reviews for " + partName;
   document.getElementById("reviewModal").style.display = "block";
 
-  fetch(`http://localhost:3000/api/reviews/${partId}`)
+  fetch(`http://localhost:3000/api/partsreviews/${partId}`)
     .then(res => res.json())
     .then(data => {
       const list = document.getElementById("reviewsList");
@@ -189,7 +196,12 @@ function openReviews(partId, partName) {
 
       data.forEach(r => {
         const div = document.createElement("div");
-        div.innerHTML = `<strong>${"⭐".repeat(r.rating)}</strong><br>${r.comment}<hr>`;
+div.innerHTML = `
+  <div style="margin-bottom:10px;">
+    <strong>${"⭐".repeat(r.PartRating)}</strong>
+    <p>${r.comment || "No comment"}</p>
+  </div>
+`;
         list.appendChild(div);
       });
     });
@@ -200,10 +212,21 @@ function closeReviews() {
 }
 
 function submitReview() {
-  const rating = document.getElementById("ratingInput").value;
-  const comment = document.getElementById("commentInput").value;
+  const rating = document.getElementById("ratingInput").value="5";
+const comment = document.getElementById("commentInput").value.trim();
 
-  fetch("http://localhost:3000/api/reviews", {
+// Prevent empty rating
+if (!rating) {
+  alert("Please select a rating");
+  return;
+}
+
+// Prevent empty comment
+if (!comment) {
+  alert("Please write a review before submitting");
+  return;
+}
+  fetch("http://localhost:3000/api/partsreviews", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -216,9 +239,41 @@ function submitReview() {
   })
   .then(res => res.json())
   .then(() => {
-    alert("Review added!");
-    openReviews(currentPartId, document.getElementById("reviewTitle").textContent);
+    document.getElementById("commentInput").value = "";
+    loadReviews(currentPartId); // 🔥 only reload list
   });
+}
+function loadReviews(partId) {
+  fetch(`http://localhost:3000/api/partsreviews/${partId}`)
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("reviewsList");
+      list.innerHTML = "";
+
+      if (data.length === 0) {
+        list.innerHTML = "<p>No reviews yet.</p>";
+        return;
+      }
+
+      data.forEach(r => {
+  const div = document.createElement("div");
+
+  const date = r.posted 
+    ? new Date(r.posted).toLocaleDateString()
+    : "Unknown date";
+
+  div.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <strong>${"⭐".repeat(r.PartRating)}</strong>
+      <small style="color:gray; margin-left:10px;">${date}</small>
+      <p>${r.comment || "No comment"}</p>
+      <hr>
+    </div>
+  `;
+
+  list.appendChild(div);
+});
+    });
 }
 </script>
 
