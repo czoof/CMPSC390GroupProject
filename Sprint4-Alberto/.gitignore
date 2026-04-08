@@ -1,0 +1,7 @@
+node_modules/
+.env
+.DS_Store
+npm-debug.log*
+car-images/
+car-rims/
+car-paints/

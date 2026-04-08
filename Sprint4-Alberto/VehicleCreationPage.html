@@ -37,17 +37,18 @@
     <h2>Vehicle Creation Page</h2>
     <p>Quickly create and save a basic vehicle configuration.</p>
 
-    <div class="form-row">
+    <div class="form-row">  <!--creates select for body-->
         <label for="baseCar">Base Car</label>
         <select id="baseCar">
             <option value="">Select Car</option>
             <option value="Muscle">Muscle</option>
             <option value="SUV">SUV</option>
-            <option value="Truck">Truck</option>
+            <option value="Truck">Truck (Not Finished)</option>
             <option value="Coupe">Coupe</option>
         </select>
-    </div>
-    <div class="form-row">
+    </div>              
+
+    <div class="form-row">  <!--creates select for color-->
     <label for="carColor">Car Color</label>
     <select id="carColor" required>
         <option value="">Select Color</option>
@@ -56,9 +57,9 @@
         <option value="purple">Neon Purple</option>
         <option value="green">Neon Green</option>
     </select>
-</div>
+</div>                  
 
-<div class="form-row">
+<div class="form-row">      <!--creates select for rims-->
     <label for="carRims">Car Rims</label>
     <select id="carRims" required>
         <option value="">Select Rims</option>
@@ -67,17 +68,15 @@
         <option value="offRoadBlack">Offroad Black</option>
         <option value="bronzeOffRoad">Offroad Bronze</option>
     </select>
-</div>
+</div>                  
 
-<div id="extraOptions"></div>
-<a href="#" onclick="addExtraOption(); return false;">+ More Options</a>
+<div id="extraOptions"></div>   <!--container for extra options-->
+    <a href="#" onclick="addExtraOption(); return false;">+ More Options</a>
 
     <div class="summary" id="summaryBox">
         <div><strong>Base Car:</strong> <span id="sumBase">Muscle</span></div>
         <div><strong>Parts:</strong> <span id="sumPart">None</span></div>
-        <div><strong>Total:</strong> $<span id="sumTotal">25000.00</span></div>
-
-        
+        <div><strong>Total:</strong> $<span id="sumTotal">25000.00</span></div>   
     </div>
 
     <div id="carPreview" style="margin-top:20px;"></div>
@@ -86,8 +85,8 @@
 
     <div class="actions">
         <button id="saveBtn">Save Configuration</button>
-        <button onclick="window.location.href='/Sprint4-Alberto/SavedConfigurations.html?userId=' + localStorage.getItem('userId')">View Saved Configurations</button>
-        <button onclick="window.location.href='/Sprint4-Alberto/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">Back to Dashboard</button>
+        <button onclick="window.location.href='/Sprint2-Charles/SavedConfigurations.html?userId=' + localStorage.getItem('userId')">View Saved Configurations</button>
+        <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">Back to Dashboard</button>
     </div>
 </div>
 
@@ -100,48 +99,57 @@ const BASE_PRICE = 25000;
 const API_BASE = `${window.location.protocol}//${window.location.hostname}:3000`;
 const userId = localStorage.getItem("userId");
 const baseCarEl = document.getElementById("baseCar");
-const partSelectEls = [
-    document.getElementById("partSelect1"),
-    document.getElementById("partSelect2"),
-    document.getElementById("partSelect3")
-];
 const saveResultEl = document.getElementById("saveResult");
 
 let allParts = [];
 
-if (!userId) {
+if (!userId) {  //send to login if no userId in localStorage
     window.location.replace("/Sprint4-Alberto/CustomerSingInPage.html");
 }
 
-
 function updateSummary() {
-    const allSelects = document.querySelectorAll(
-        "#partSelect1, #partSelect2, #partSelect3, #extraOptions select"
-    );
-    const chosenParts = [];
-    allSelects.forEach(select => {
+    let total = 0;
+    let partNames = [];
+
+    const baseCar = baseCarEl.value;
+    if (baseCar) {
+        const carPart = allParts.find(p =>
+            p.Category?.toLowerCase() === "car" && p.Name.toLowerCase().startsWith(baseCar.toLowerCase())
+        );
+        if (carPart) {total += Number(carPart.Price);}
+    }
+
+    const colorValue = document.getElementById("carColor").value;
+    if (colorValue) {
+        const colorPart = allParts.find(p =>
+            p.Category?.toLowerCase() === "paint" && p.Name.toLowerCase().includes(colorValue.toLowerCase())
+        );
+        if (colorPart) {total += Number(colorPart.Price);}
+    }
+    
+    const rimsValue = document.getElementById("carRims").value;
+    if (rimsValue) {
+        const rimsPart = allParts.find(p =>
+            p.Category?.toLowerCase() === "rims" && p.Image?.toLowerCase().includes(rimsValue.toLowerCase())
+        );
+        if (rimsPart) { total += Number(rimsPart.Price);}
+    }
+
+    const selects = document.querySelectorAll("#extraOptions select");
+    selects.forEach(select => {
         if (select.value) {
-            const selectedOption = select.options[select.selectedIndex];
-            chosenParts.push({
-                Name: selectedOption.dataset.name,
-                Price: Number(selectedOption.dataset.price || 0)
-            });
+            const opt = select.options[select.selectedIndex];
+            total += Number(opt.dataset.price || 0);
+            partNames.push(opt.dataset.name);
         }
     });
-
-    const partNames = chosenParts.length
-        ? chosenParts.map(p => p.Name).join(", ")
-        : "None";
-
-    const partsTotal = chosenParts.reduce((sum, p) => sum + p.Price, 0);
-    const total = BASE_PRICE + partsTotal;
-
-    document.getElementById("sumBase").textContent = baseCarEl.value;
-    document.getElementById("sumPart").textContent = partNames;
+    
+    document.getElementById("sumBase").textContent = baseCar || "None";
+    document.getElementById("sumPart").textContent = partNames.length ? partNames.join(", ") : "None";
     document.getElementById("sumTotal").textContent = total.toFixed(2);
 }
 
-
+        /*Gets all the parts form database*/
 async function loadParts() {
     try {
         const res = await fetch(`${API_BASE}/parts`);
@@ -155,7 +163,11 @@ async function loadParts() {
     }
 }
 
+/*Event listeners for updating summary and preview when selections change*/
 baseCarEl.addEventListener("change", updateSummary);
+document.getElementById("carColor").addEventListener("change", updateSummary);
+document.getElementById("carRims").addEventListener("change", updateSummary);
+
 
 document.getElementById("saveBtn").addEventListener("click", async () => {
     const color = document.getElementById("carColor").value;
@@ -166,21 +178,18 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
         return;
     }    
     const allSelects = document.querySelectorAll("#partSelect1, #partSelect2, #partSelect3, #extraOptions select");
+    const chosenParts = [];
 
-const chosenParts = [];
-
-allSelects.forEach(select => {
-    if (select.value) { 
-
-        const selectedOption = select.options[select.selectedIndex];
-
-        chosenParts.push({
-            PartID: select.value,
-            Name: selectedOption.dataset.name,
-            Price: Number(selectedOption.dataset.price || 0)
-        });
-    }
-});
+    allSelects.forEach(select => {
+        if (select.value) { 
+            const selectedOption = select.options[select.selectedIndex];
+            chosenParts.push({
+                PartID: select.value,
+                Name: selectedOption.dataset.name,
+                Price: Number(selectedOption.dataset.price || 0)
+            });
+        }
+    });
 
     const uniquePartIds = [...new Set(chosenParts.map(p => String(p.PartID)))];
     const total = BASE_PRICE + chosenParts.reduce((sum, p) => sum + Number(p.Price || 0), 0);
@@ -198,9 +207,7 @@ allSelects.forEach(select => {
                 totalPrice: total
             })
         });
-
         const data = await res.json();
-
         console.log(data);
 
         if (!res.ok) {
@@ -230,24 +237,19 @@ allSelects.forEach(select => {
 
 let extraCount = 0;
 
-function addExtraOption() {
+function addExtraOption() {/*Adds a removable extra option but the same part cannot be selected twice*/
     extraCount++;
 
     const container = document.getElementById("extraOptions");
-
     const div = document.createElement("div");
     div.classList.add("form-row");
-
     const label = document.createElement("label");
     label.textContent = `Extra Option ${extraCount}`;
-
     const select = document.createElement("select");
-
     const defaultOpt = document.createElement("option");
     defaultOpt.value = "";
     defaultOpt.textContent = "Select Option";
     select.appendChild(defaultOpt);
-    
     const excludedCategories = ["paint", "wheel", "rims", "car"];
 
     allParts.forEach(part => {
@@ -289,7 +291,7 @@ document.addEventListener("change", (e) => {
 });
 
 
-function updateCarPreview() {
+function updateCarPreview() { /*Updates the car preview based on selected options*/
     const baseCar = document.getElementById("baseCar").value;
     const color = document.getElementById("carColor").value;
     const rims = document.getElementById("carRims").value;
@@ -308,8 +310,7 @@ function updateCarPreview() {
              onerror="this.src='/Sprint4-Alberto/car-images/${baseCar}_${color}_basic.png'">
     `;
 }
-
-document.getElementById("baseCar").addEventListener("change", updateCarPreview);
+document.getElementById("baseCar").addEventListener("change", updateCarPreview); /*these three will update the car preview when their values change*/
 document.getElementById("carColor").addEventListener("change", updateCarPreview);
 document.getElementById("carRims").addEventListener("change", updateCarPreview);
 
@@ -332,11 +333,11 @@ function refreshAllDropdowns() {
     selects.forEach(select => {
         const currentValue = select.value;
         select.innerHTML = `<option value="">Select Option</option>`;
-        const excludedCategories = ["paint", "rims", "car"];
+        const excludedCategories = ["paint", "wheel", "rims", "car"];
         allParts.forEach(part => {
             const category = part.Category?.toLowerCase();
             if (excludedCategories.includes(category)) return;
-            if (selectedIds.has(String(part.PartID)) && String(part.PartID) !== currentValue) {
+            if (selectedIds.has(String(part.PartID)) && String(part.PartID) !== currentValue) {/*don't include parts that are already selected*/
                 return;
             }
 
@@ -354,8 +355,14 @@ function refreshAllDropdowns() {
         });
     });
 }
-loadParts();
-updateSummary();
+
+async function initPage() { /* run once at the start of page creation */
+    await loadParts();
+    updateSummary();
+    updateCarPreview();
+}
+
+initPage();
 </script>
 
 </body>
