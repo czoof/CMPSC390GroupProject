@@ -240,7 +240,7 @@ if (!comment) {
   .then(res => res.json())
   .then(() => {
     document.getElementById("commentInput").value = "";
-    loadReviews(currentPartId); // 🔥 only reload list
+    loadReviews(currentPartId); //  only reload list
   });
 }
 function loadReviews(partId) {

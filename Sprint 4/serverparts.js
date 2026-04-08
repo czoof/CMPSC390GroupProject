@@ -50,7 +50,7 @@ app.get("/api/partsreviews/:partId", (req, res) => {
   const partId = req.params.partId;
 
   db.query(
-    "SELECT * FROM partsreviews WHERE PartID = ? ORDER BY created_at DESC",
+    "SELECT * FROM partsreviews WHERE PartID = ? ORDER BY posted DESC",
 
     [partId],
     (err, results) => {
