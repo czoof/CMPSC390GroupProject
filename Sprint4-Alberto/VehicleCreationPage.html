@@ -102,9 +102,7 @@
                 <button id="saveBtn">Save Configuration</button>
                 <button onclick="window.location.href='/Sprint2-Charles/SavedConfigurations.html?userId=' + localStorage.getItem('userId')">View Saved Configurations</button>
                 <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">Back to Dashboard</button>
-                <button type="button" onclick="toggleView()" id="viewBtn">
-                    Front View
-                </button>
+                <button type="button" onclick="toggleView()" id="viewBtn">Front View</button>
             </div>
             <!-- <div class="form-row"> -->
                 
@@ -182,7 +180,7 @@ function updateSummary() {
         }
     });
     
-    // document.getElementById("sumBase").textContent = baseCar || "None";
+    
     const baseParts = [];
 
     if (baseCar) baseParts.push(baseCar);
@@ -238,7 +236,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     });
 
     const uniquePartIds = [...new Set(chosenParts.map(p => String(p.PartID)))];
-    const total = BASE_PRICE + chosenParts.reduce((sum, p) => sum + Number(p.Price || 0), 0);
+    const total = Number(document.getElementById("sumTotal").textContent);
     try {
         const res = await fetch(`${API_BASE}/cars`, {
             method: "POST",
@@ -269,22 +267,22 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
 
        const baseCar = baseCarEl.value;
 
-const imageName = rims
-    ? `${baseCar}_${color}_${rims}.png`
-    : `${baseCar}_${color}_basic.png`;
+        const imageName = rims
+            ? `${baseCar}_${color}_${rims}.png`
+            : `${baseCar}_${color}_basic.png`;
 
-document.getElementById("carPreview").innerHTML = `
-    <img src="/Sprint4-Alberto/car-images/${imageName}" 
-         style="width:800px; max-width:100%; background:white; padding:10px;"
-`;
+        document.getElementById("carPreview").innerHTML = `
+            <img src="/Sprint4-Alberto/car-images/${imageName}" 
+                style="width:800px; max-width:100%; background:white; padding:10px;"
+        `;
 
         saveResultEl.textContent = "Configuration saved successfully.";
         saveResultEl.style.color = "green";
-    } catch (e) {
-        console.error(e);
-        saveResultEl.textContent = "Server error while saving configuration.";
-        saveResultEl.style.color = "red";
-    }
+        } catch (e) {
+            console.error(e);
+            saveResultEl.textContent = "Server error while saving configuration.";
+            saveResultEl.style.color = "red";
+        }
 
 });
 
@@ -299,7 +297,7 @@ function addExtraOption() {/*Adds a removable extra option but the same part can
     const label = document.createElement("label");
     label.textContent = `Extra Option ${extraCount}`;
     const select = document.createElement("select");
-    select.addEventListener("change", updateSummary);
+    select.addEventListener("change", () => { updateSummary(); refreshAllDropdowns(); });
     const defaultOpt = document.createElement("option");
     defaultOpt.value = "";
     defaultOpt.textContent = "Select Option";
@@ -308,9 +306,9 @@ function addExtraOption() {/*Adds a removable extra option but the same part can
 
     allParts.forEach(part => {
         const category = part.Category?.toLowerCase();
-        if (excludedCategories.includes(part.Category)) {
+        if (excludedCategories.includes(category)) {
             return;
-        }
+        }        
         const opt = document.createElement("option");
         opt.value = String(part.PartID);
         opt.textContent = `${part.Name} ($${Number(part.Price).toFixed(2)})`;
@@ -323,9 +321,11 @@ function addExtraOption() {/*Adds a removable extra option but the same part can
     removeBtn.textContent = "Remove";
     removeBtn.type = "button"; 
 
-    removeBtn.onclick = () => {
+    removeBtn.onclick = () => 
+    {
         div.remove();      
         updateSummary();   
+        refreshAllDropdowns();
     };
 
     div.appendChild(label);
@@ -391,8 +391,17 @@ function refreshAllDropdowns() {
         const excludedCategories = ["paint", "wheel", "rims", "car"];
         allParts.forEach(part => {
             const category = part.Category?.toLowerCase();
-            if (excludedCategories.includes(category)) return;
-            if (selectedIds.has(String(part.PartID)) && String(part.PartID) !== currentValue) {/*don't include parts that are already selected*/
+            const selectedCategories = getSelectedCategories();
+            let currentCategory = null;
+            const selectedPart = allParts.find(p => String(p.PartID) === currentValue);
+            if (selectedPart) {
+                currentCategory = selectedPart.Category?.toLowerCase();
+            }
+            const partCategory = part.Category?.toLowerCase();
+            if (
+                selectedCategories.has(partCategory) &&
+                partCategory !== currentCategory
+            ) {
                 return;
             }
 
@@ -409,6 +418,22 @@ function refreshAllDropdowns() {
             select.appendChild(opt);
         });
     });
+}
+
+function getSelectedCategories() {
+    const selects = document.querySelectorAll("#extraOptions select");
+    const categories = new Set();
+
+    selects.forEach(select => {
+        if (select.value) {
+            const selectedPart = allParts.find(p => String(p.PartID) === select.value);
+            if (selectedPart) {
+                categories.add(selectedPart.Category?.toLowerCase());
+            }
+        }
+    });
+
+    return categories;
 }
 
 function toggleView() {
