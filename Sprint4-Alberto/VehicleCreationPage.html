@@ -26,9 +26,15 @@
         button { padding: 12px 28px; background: linear-gradient(135deg, #4f90f0 0%, #6faeff 100%); border: none; border-radius: 10px; color: #fff; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.3s ease; box-shadow: 0 0 20px rgba(79,144,240,0.4); }
         button:hover { transform: translateY(-3px); box-shadow: 0 0 35px rgba(79,144,240,0.6), 0 8px 16px rgba(79,144,240,0.3); }
         footer { position: relative; z-index: 1; text-align: center; padding: 32px 24px; border-top: 1px solid rgba(79,144,240,0.1); color: rgba(175,200,245,0.6); font-size: 0.85rem; margin-top: auto; }
-        .split-layout { display: flex; padding: 20px; gap: 20px; }
-        .left-side { width: 40%; }
-        .right-side { width: 60%; display: flex; justify-content: center; align-items: center; }    
+        .split-layout { display: flex; padding: 20px; gap: 20px; position: relative; z-index: 1; flex: 1; }
+        .left-side { width: 40%;}
+        .right-side { width: 60%; display: flex; justify-content: center; align-items: center; min-height: 500px; position: relative; z-index: 1; }
+        #carPreview { min-height: 400px; width: 100%; display: flex; justify-content: center; align-items: center; position: relative; z-index: 1; }
+        #carPreview img {box-shadow: 0 20px 40px rgba(0,0,0,0.5); transition: transform .3s ease;}
+        #carPreview img:hover {transform: scale(1.05); }
+        #carContainer {position: relative; width: 100%; display: flex; justify-content: center; }
+        #viewControls { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 12px; z-index: 10;}
+        #viewControls span {font-size: 14px;}
 </style>
 </head>
 
@@ -51,7 +57,7 @@
                     <option value="">Select Car</option>
                     <option value="Muscle">Muscle</option>
                     <option value="SUV">SUV</option>
-                    <option value="Truck">Truck (Not Finished)</option>
+                    <option value="Truck">Truck </option>
                     <option value="Coupe">Coupe</option>
                 </select>
             </div>
@@ -67,16 +73,18 @@
                 </select>
             </div>
 
-            <div class="form-row">
+           <form-row">
                 <label for="carRims">Car Rims</label>
                 <select id="carRims">
                     <option value="">Select Rims</option>
                     <option value="blackSport">Sport Black</option>
                     <option value="greySport">Sport Silver</option>
-                    <option value="offRoadBlack">Offroad Black</option>
                     <option value="bronzeOffRoad">Offroad Bronze</option>
+                    <option value="OffRoadBlack">Offroad Black</option>
                 </select>
             </div>
+
+            
 
             <div id="extraOptions"></div>
             <a href="#" onclick="addExtraOption(); return false;">+ More Options</a>
@@ -93,21 +101,32 @@
                 <button id="saveBtn">Save Configuration</button>
                 <button onclick="window.location.href='/Sprint2-Charles/SavedConfigurations.html?userId=' + localStorage.getItem('userId')">View Saved Configurations</button>
                 <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">Back to Dashboard</button>
+                <button type="button" onclick="toggleView()" id="viewBtn">
+                    Front View
+                </button>
             </div>
+            <!-- <div class="form-row"> -->
+                
+               
+            <!-- </div> -->
 
         </div>
     </div>
 
     <!-- RIGHT SIDE -->
     <div class="right-side">
+        <div id="carContainer">
+
         <div id="carPreview"></div>
-    </div>
+
+
+
 
 </div>
 
-<footer>
+<!-- <footer>
 Parts Trading & Vehicle Customization Platform
-</footer>
+</footer> -->
 </body>
 
 <script>
@@ -118,6 +137,8 @@ const baseCarEl = document.getElementById("baseCar");
 const saveResultEl = document.getElementById("saveResult");
 
 let allParts = [];
+
+let currentView = "front";
 
 if (!userId) {  //send to login if no userId in localStorage
     window.location.replace("/Sprint4-Alberto/CustomerSingInPage.html");
@@ -236,10 +257,17 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
             return;
         }
         
-        document.getElementById("carPreview").innerHTML = `
-            <h3>Your Car</h3>
-            <img src="/car-images/${data.image}" style="width:300px;">
-        `;
+
+       const baseCar = baseCarEl.value;
+
+const imageName = rims
+    ? `${baseCar}_${color}_${rims}.png`
+    : `${baseCar}_${color}_basic.png`;
+
+document.getElementById("carPreview").innerHTML = `
+    <img src="/Sprint4-Alberto/car-images/${imageName}" 
+         style="width:800px; max-width:100%; background:white; padding:10px;"
+`;
 
         saveResultEl.textContent = "Configuration saved successfully.";
         saveResultEl.style.color = "green";
@@ -299,33 +327,34 @@ function addExtraOption() {/*Adds a removable extra option but the same part can
 }
 
 
-document.addEventListener("change", (e) => {
-    if (e.target.tagName === "SELECT") {
-        updateSummary();
-        refreshAllDropdowns();
-    }
-});
 
 
-function updateCarPreview() { /*Updates the car preview based on selected options*/
+function updateCarPreview() {
     const baseCar = document.getElementById("baseCar").value;
     const color = document.getElementById("carColor").value;
     const rims = document.getElementById("carRims").value;
 
-    if (!baseCar || !color) return;
-    let imageName;
-    if (!rims) {
-        imageName = `${baseCar}_${color}_basic.png`;
-    } else {
-        imageName = `${baseCar}_${color}_${rims}.png`;
+    console.log("Preview:", baseCar, color, rims);
+
+    if (!baseCar || !color) {
+    return;
     }
 
-    document.getElementById("carPreview").innerHTML = `
-        <img src="/Sprint4-Alberto/car-images/${imageName}" 
-             style="width:300px;"
-             onerror="this.src='/Sprint4-Alberto/car-images/${baseCar}_${color}_basic.png'">
-    `;
+    let imageName;
+    if (!rims) {
+    imageName = `${baseCar}_${color}_basic_${currentView}.png`;
+} else {
+    imageName = `${baseCar}_${color}_${rims}_${currentView}.png`;
 }
+
+    console.log("Trying:", imageName);
+
+    document.getElementById("carPreview").innerHTML = `
+    <img src="/Sprint4-Alberto/car-images/${imageName}" 
+         style="width:800px; max-width:100%; background:white; padding:10px;">
+`;
+}
+
 document.getElementById("baseCar").addEventListener("change", updateCarPreview); /*these three will update the car preview when their values change*/
 document.getElementById("carColor").addEventListener("change", updateCarPreview);
 document.getElementById("carRims").addEventListener("change", updateCarPreview);
@@ -370,6 +399,13 @@ function refreshAllDropdowns() {
             select.appendChild(opt);
         });
     });
+}
+
+function toggleView() {
+    currentView = currentView === "front" ? "back" : "front";
+    document.getElementById("viewBtn").innerText =
+        currentView === "front" ? "Front View" : "Back View";
+    updateCarPreview();
 }
 
 async function initPage() { /* run once at the start of page creation */
