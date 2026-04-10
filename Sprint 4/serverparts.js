@@ -69,7 +69,7 @@ app.post("/api/partsreviews", (req, res) => {
   if (!PartID || !rating) {
     return res.status(400).json({ error: "Missing required fields" });
   }
-
+//adding the creted review
   db.query(
     "INSERT INTO partsreviews (PartID, PartRating, comment) VALUES (?, ?, ?)",
 
