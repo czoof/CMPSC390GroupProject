@@ -178,6 +178,38 @@ function fetchParts() {
     });
 }
 
+function buildImageCandidates(part) {
+  const candidates = [];
+  const raw = String(part.Image || "").trim();
+
+  if (raw) {
+    candidates.push(raw);
+    // Handle known case mismatch that can fail on Linux hosts.
+    if (raw.includes("/Sprint4-Alberto/car-rims/OffRoadBlack.png")) {
+      candidates.push("/Sprint4-Alberto/car-rims/offRoadBlack.png");
+    }
+  }
+
+  const byName = {
+    "White Paint": "/Sprint4-Alberto/car-paints/white.png",
+    "Black Paint": "/Sprint4-Alberto/car-paints/black.png",
+    "Neon Purple Paint": "/Sprint4-Alberto/car-paints/purple.png",
+    "Neon Green Paint": "/Sprint4-Alberto/car-paints/green.png",
+    "Black Sport Rims": "/Sprint4-Alberto/car-rims/blackSport.png",
+    "Grey Sport Rims": "/Sprint4-Alberto/car-rims/greySport.png",
+    "Bronze Offroad Rims": "/Sprint4-Alberto/car-rims/bronzeOffRoad.png",
+    "Offroad Black Rims": "/Sprint4-Alberto/car-rims/offRoadBlack.png"
+  };
+
+  const mapped = byName[String(part.Name || "")];
+  if (mapped) {
+    candidates.push(mapped);
+  }
+
+  candidates.push("https://via.placeholder.com/110x90?text=No+Image");
+  return [...new Set(candidates)];
+}
+
 function displayParts() {
   const container = document.getElementById("partsContainer");
   container.innerHTML = "";
@@ -187,10 +219,15 @@ function displayParts() {
     div.className = "part";
 
     const img = document.createElement("img");
-    img.src = part.Image || "https://via.placeholder.com/110x90?text=No+Image";
+    const imageCandidates = buildImageCandidates(part);
+    let imageIdx = 0;
+    img.src = imageCandidates[imageIdx];
     img.alt = part.Name || ("Part #" + part.PartID);
     img.onerror = () => {
-      img.src = "https://via.placeholder.com/110x90?text=No+Image";
+      imageIdx += 1;
+      if (imageIdx < imageCandidates.length) {
+        img.src = imageCandidates[imageIdx];
+      }
     };
 
     const info = document.createElement("div");
