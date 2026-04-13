@@ -74,32 +74,49 @@ Parts Trading & Vehicle Customization Platform
 
 <script>
 let parts = [];
+let allParts = [];
 let cart = [];
 
+function getSelectedCategories() {
+  const selected = [];
+
+  if (document.getElementById("bufferCheckbox").checked) selected.push("buffer");
+  if (document.getElementById("paintCheckbox").checked) selected.push("paint");
+  if (document.getElementById("engineCheckbox").checked) selected.push("engine");
+  if (document.getElementById("wheelCheckbox").checked) selected.push("wheel");
+  // Rims are represented in data as wheel category.
+  if (document.getElementById("rimsCheckbox").checked) selected.push("wheel");
+  if (document.getElementById("hornCheckbox").checked) selected.push("horn");
+  if (document.getElementById("suspensionCheckbox").checked) selected.push("suspension");
+  if (document.getElementById("exhaustsystemCheckbox").checked) selected.push("exhaust system");
+
+  return [...new Set(selected)];
+}
+
+function applyFilters() {
+  const selectedCategories = getSelectedCategories();
+  const inStockOnly = document.getElementById("inStockCheckbox").checked;
+
+  parts = allParts.filter((part) => {
+    const category = String(part.Category || "").toLowerCase();
+    const stock = Number(part.Stock || 0);
+
+    const categoryMatch =
+      selectedCategories.length === 0 || selectedCategories.includes(category);
+    const stockMatch = !inStockOnly || stock > 0;
+
+    return categoryMatch && stockMatch;
+  });
+
+  displayParts();
+}
+
 function fetchParts() {
-  let url = "/api/parts?";
-  const params = [];
-
-  if (document.getElementById("inStockCheckbox").checked) params.push("inStock=true");
-
-  // Keep the same behavior as your earlier page: if multiple categories are checked,
-  // the last checked one in this order is used by the API.
-  if (document.getElementById("bufferCheckbox").checked) params.push("category=buffer");
-  if (document.getElementById("paintCheckbox").checked) params.push("category=paint");
-  if (document.getElementById("engineCheckbox").checked) params.push("category=engine");
-  if (document.getElementById("wheelCheckbox").checked) params.push("category=wheel");
-  if (document.getElementById("rimsCheckbox").checked) params.push("category=rims");
-  if (document.getElementById("hornCheckbox").checked) params.push("category=horn");
-  if (document.getElementById("suspensionCheckbox").checked) params.push("category=suspension");
-  if (document.getElementById("exhaustsystemCheckbox").checked) params.push("category=exhaust system");
-
-  url += params.join("&");
-
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      parts = data;
-      displayParts();
+  fetch("/parts")
+    .then((res) => res.json())
+    .then((data) => {
+      allParts = Array.isArray(data) ? data : [];
+      applyFilters();
     })
     .catch(() => {
       document.getElementById("partsContainer").innerText = "Error loading parts.";
@@ -193,7 +210,7 @@ function displayCart() {
   document.getElementById("cartTotal").textContent = total.toFixed(2);
 }
 
-document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.addEventListener("change", fetchParts));
+document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.addEventListener("change", applyFilters));
 fetchParts();
 </script>
 
