@@ -132,6 +132,40 @@ function applyFilters() {
   displayParts();
 }
 
+function getSelectedCategories() {
+  const selected = [];
+
+  if (document.getElementById("bufferCheckbox").checked) selected.push("buffer");
+  if (document.getElementById("paintCheckbox").checked) selected.push("paint");
+  if (document.getElementById("engineCheckbox").checked) selected.push("engine");
+  if (document.getElementById("wheelCheckbox").checked) selected.push("wheel");
+  // Rims are represented in data as wheel category.
+  if (document.getElementById("rimsCheckbox").checked) selected.push("wheel");
+  if (document.getElementById("hornCheckbox").checked) selected.push("horn");
+  if (document.getElementById("suspensionCheckbox").checked) selected.push("suspension");
+  if (document.getElementById("exhaustsystemCheckbox").checked) selected.push("exhaust system");
+
+  return [...new Set(selected)];
+}
+
+function applyFilters() {
+  const selectedCategories = getSelectedCategories();
+  const inStockOnly = document.getElementById("inStockCheckbox").checked;
+
+  parts = allParts.filter((part) => {
+    const category = String(part.Category || "").toLowerCase();
+    const stock = Number(part.Stock || 0);
+
+    const categoryMatch =
+      selectedCategories.length === 0 || selectedCategories.includes(category);
+    const stockMatch = !inStockOnly || stock > 0;
+
+    return categoryMatch && stockMatch;
+  });
+
+  displayParts();
+}
+
 function fetchParts() {
   fetch("/parts")
     .then((res) => res.json())

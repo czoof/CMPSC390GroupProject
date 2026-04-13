@@ -200,6 +200,10 @@ let allParts = [];
 
 let currentView = "front";
 
+function getCarImage(baseCar, color, rims, view) {
+  return `https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/${baseCar}_${color}_${rims}_${view}.png?alt=media`;
+}
+
 if (!userId) {  //send to login if no userId in localStorage
     window.location.replace("/Sprint2Alberto/CustomerSingInPage.html");
 }
@@ -349,6 +353,24 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
             return;
         }
         
+       const baseCar = baseCarEl.value;
+
+        const imageName = rims
+            ? `${baseCar}_${color}_${rims}.png`
+            : `${baseCar}_${color}_basic.png`;
+
+        // document.getElementById("carPreview").innerHTML = `
+        //     <img src="/Sprint4-Alberto/car-images/${imageName}" 
+        //         style="width:800px; max-width:100%; background:white; padding:10px;"
+        // `;
+
+        const imageUrl = getCarImage(baseCar, color, rims || "basic", "front");
+
+        document.getElementById("carPreview").innerHTML = `
+            <img src="${imageUrl}" 
+                style="width:800px; max-width:100%; background:white; padding:10px;">
+        `;
+
         saveResultEl.textContent = "Configuration saved successfully.";
         saveResultEl.style.color = "green";
         } catch (e) {
@@ -437,14 +459,17 @@ function updateCarPreview() {
         const viewLabel = currentView === "front" ? "Front" : "Back";
         previewMeta.textContent = `${baseCar} | ${color || "no color"} | ${rims || "no rims"} | ${viewLabel} view`;
 
-        preview.innerHTML = `
-            <div class="car-shell">
-                <div class="paint-panel" style="background:${paintBg};"></div>
-                <div class="rim-panel">
-                    ${rimImage ? `<img src="${rimImage}" alt="${rims} rim preview"/>` : `<div class="preview-empty">Select rims</div>`}
-                </div>
-            </div>
-        `;
+    console.log("Trying:", imageName);
+
+//     document.getElementById("carPreview").innerHTML = `
+//     <img src="/Sprint4-Alberto/car-images/${imageName}" 
+//          style="width:800px; max-width:100%; background:white; padding:10px;">
+// `;
+    const carImgUrl = getCarImage(baseCar, color, rims || "basic", currentView);
+    document.getElementById("carPreview").innerHTML = `
+        <img src="${carImgUrl}" 
+             style="width:800px; max-width:100%; background:white; padding:10px;">
+    `;
 }
 
 document.getElementById("baseCar").addEventListener("change", updateCarPreview); /*these three will update the car preview when their values change*/
