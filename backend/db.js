@@ -2,17 +2,11 @@ const mysql = require("mysql2");
 require("dotenv").config();
 
 const db = mysql.createConnection({
-<<<<<<< ariDev
-  host: "localhost",
-  user: "root",
-  password: "TopSecret2300!",//put your MySQL root password here if you set one
-  database: "legautocustDB"
-=======
-  host: process.env.HOST,
-  user: process.env.USER,
-  password: process.env.PASSWORD,
-  database: process.env.DATABASE
->>>>>>> main
+  host: process.env.DB_HOST || process.env.HOST || "localhost",
+  user: process.env.DB_USER || process.env.USER || "root",
+  password: process.env.DB_PASSWORD || process.env.PASSWORD || "",
+  database: process.env.DB_NAME || process.env.DATABASE || "legautocustDB",
+  port: Number(process.env.DB_PORT || 3306)
 });
 
 db.connect((err) => {
