@@ -1252,6 +1252,50 @@ app.get("/bookmarks/:userId", (req, res) => {
     });
 });
 // ==========================================
+// PARTS REVIEWS ROUTES
+// ==========================================
+
+app.get("/api/partsreviews/:partId", (req, res) => {
+  const partId = parseInt(req.params.partId, 10);
+  if (isNaN(partId)) {
+    return res.status(400).json({ error: "Invalid part ID" });
+  }
+  db.query(
+    "SELECT * FROM partsreviews WHERE PartID = ? ORDER BY posted DESC",
+    [partId],
+    (err, results) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.post("/api/partsreviews", (req, res) => {
+  const { PartID, rating, comment } = req.body;
+  const parsedPartId = parseInt(PartID, 10);
+  const parsedRating = parseInt(rating, 10);
+
+  if (!parsedPartId || isNaN(parsedPartId) || !parsedRating || isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+    return res.status(400).json({ error: "Missing or invalid required fields" });
+  }
+
+  db.query(
+    "INSERT INTO partsreviews (PartID, PartRating, comment) VALUES (?, ?, ?)",
+    [parsedPartId, parsedRating, comment || null],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+// ==========================================
 // SERVER START
 // ==========================================
 

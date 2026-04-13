@@ -167,8 +167,8 @@
 
 
         function goToDiscussions() {
-    window.location.href = '/Sprint2Ari/discussions.html';
-}
+            window.location.href = '/Sprint2Ari/discussions.html?userId=' + encodeURIComponent(userId);
+        }
         loadCustomer();
         loadSavedBuilds();
     </script>

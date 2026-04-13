@@ -33,6 +33,18 @@
     button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 25px rgba(79,144,240,0.5); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     .top-actions { margin-top: 24px; }
+    .review-btn { background: linear-gradient(135deg, #3a5a3a 0%, #4caf50 100%); box-shadow: 0 0 15px rgba(76,175,80,0.3); margin-left: 8px; }
+    .review-btn:hover:not(:disabled) { box-shadow: 0 0 25px rgba(76,175,80,0.5); }
+    #reviewModal { display:none; position:fixed; top:8%; left:50%; transform:translateX(-50%); width:480px; max-width:95vw; background:#0c1428; border:1px solid rgba(79,144,240,0.3); border-radius:16px; padding:24px; z-index:1000; box-shadow:0 0 60px rgba(0,0,0,0.7); max-height:80vh; overflow-y:auto; }
+    #reviewModal h2 { font-family:'Orbitron',monospace; font-size:1rem; margin-bottom:16px; color:#4f90f0; }
+    #reviewModal h3 { font-size:0.95rem; margin:16px 0 8px; color:rgba(175,200,245,0.9); }
+    #reviewsList .review-entry { background:rgba(79,144,240,0.07); border-radius:8px; padding:10px 12px; margin-bottom:8px; }
+    #reviewsList .review-entry p { color:rgba(175,200,245,0.8); font-size:0.85rem; margin:4px 0 0; }
+    #reviewsList .review-date { color:rgba(175,200,245,0.4); font-size:0.75rem; margin-left:8px; }
+    #reviewModal textarea { width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(79,144,240,0.3); border-radius:8px; color:#fff; padding:10px; font-family:'Inter',sans-serif; font-size:0.9rem; resize:vertical; min-height:80px; }
+    #reviewModal select { background:rgba(255,255,255,0.05); border:1px solid rgba(79,144,240,0.3); border-radius:8px; color:#fff; padding:8px 12px; font-family:'Inter',sans-serif; }
+    #reviewModal .modal-actions { display:flex; gap:10px; margin-top:12px; }
+    #reviewModal .close-btn { background:rgba(255,255,255,0.07); box-shadow:none; }
     footer { position: relative; z-index: 1; text-align: center; padding: 32px 24px; border-top: 1px solid rgba(79,144,240,0.1); color: rgba(175,200,245,0.6); font-size: 0.85rem; margin-top: 40px; }
   </style>
 </head>
@@ -144,9 +156,15 @@ function displayParts() {
       button.onclick = () => addToCart(part);
     }
 
+    const reviewBtn = document.createElement("button");
+    reviewBtn.textContent = "Reviews";
+    reviewBtn.className = "review-btn";
+    reviewBtn.onclick = () => openReviews(part.PartID, part.Name);
+
     div.appendChild(img);
     div.appendChild(info);
     div.appendChild(button);
+    div.appendChild(reviewBtn);
 
     container.appendChild(div);
   });
@@ -191,7 +209,80 @@ function displayCart() {
 
 document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.addEventListener("change", fetchParts));
 fetchParts();
+
+// ── REVIEWS ──
+let currentPartId = null;
+
+function openReviews(partId, partName) {
+  currentPartId = partId;
+  document.getElementById("reviewTitle").textContent = "Reviews for " + partName;
+  document.getElementById("reviewModal").style.display = "block";
+  loadReviews(partId);
+}
+
+function closeReviews() {
+  document.getElementById("reviewModal").style.display = "none";
+}
+
+function loadReviews(partId) {
+  fetch("/api/partsreviews/" + partId)
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("reviewsList");
+      list.innerHTML = "";
+      if (!data.length) {
+        list.innerHTML = "<p style='color:rgba(175,200,245,0.5);font-size:0.85rem;'>No reviews yet.</p>";
+        return;
+      }
+      data.forEach(r => {
+        const div = document.createElement("div");
+        div.className = "review-entry";
+        const date = r.posted ? new Date(r.posted).toLocaleDateString() : "";
+        div.innerHTML = `<strong>${"⭐".repeat(r.PartRating)}</strong><span class="review-date">${date}</span><p>${r.comment || "No comment"}</p>`;
+        list.appendChild(div);
+      });
+    })
+    .catch(() => {
+      document.getElementById("reviewsList").innerHTML = "<p style='color:#ff6b6b;'>Failed to load reviews.</p>";
+    });
+}
+
+function submitReview() {
+  const rating = document.getElementById("ratingInput").value;
+  const comment = document.getElementById("commentInput").value.trim();
+  if (!comment) { alert("Please write a review before submitting."); return; }
+
+  fetch("/api/partsreviews", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ PartID: currentPartId, rating, comment })
+  })
+  .then(res => res.json())
+  .then(() => {
+    document.getElementById("commentInput").value = "";
+    loadReviews(currentPartId);
+  })
+  .catch(() => alert("Failed to submit review."));
+}
 </script>
 
+<div id="reviewModal">
+  <h2 id="reviewTitle"></h2>
+  <div id="reviewsList"></div>
+  <h3>Add a Review</h3>
+  <label style="color:rgba(175,200,245,0.8);font-size:0.85rem;">Rating:</label><br>
+  <select id="ratingInput" style="margin:8px 0 12px;">
+    <option value="5">5 ⭐⭐⭐⭐⭐</option>
+    <option value="4">4 ⭐⭐⭐⭐</option>
+    <option value="3">3 ⭐⭐⭐</option>
+    <option value="2">2 ⭐⭐</option>
+    <option value="1">1 ⭐</option>
+  </select><br>
+  <textarea id="commentInput" placeholder="Write your review..."></textarea>
+  <div class="modal-actions">
+    <button onclick="submitReview()">Submit</button>
+    <button class="close-btn" onclick="closeReviews()">Close</button>
+  </div>
+</div>
 </body>
 </html>
