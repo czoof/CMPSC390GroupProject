@@ -147,6 +147,9 @@ function displayParts() {
     const img = document.createElement("img");
     img.src = part.Image || "https://via.placeholder.com/110x90?text=No+Image";
     img.alt = part.Name || ("Part #" + part.PartID);
+    img.onerror = () => {
+      img.src = "https://via.placeholder.com/110x90?text=No+Image";
+    };
 
     const info = document.createElement("div");
     info.className = "info";
@@ -178,9 +181,15 @@ function displayParts() {
       button.onclick = () => addToCart(part);
     }
 
+    const reviewBtn = document.createElement("button");
+    reviewBtn.textContent = "Reviews";
+    reviewBtn.className = "review-btn";
+    reviewBtn.onclick = () => openReviews(part.PartID, part.Name || ("Part #" + part.PartID));
+
     div.appendChild(img);
     div.appendChild(info);
     div.appendChild(button);
+    div.appendChild(reviewBtn);
 
     container.appendChild(div);
   });
