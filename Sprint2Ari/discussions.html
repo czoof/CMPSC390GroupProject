@@ -2,14 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Discussion Threads</title>
   <link rel="stylesheet" href="../global-ui.css">
+  <style>
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 18% 22%, rgba(79,144,240,0.12), transparent 45%), linear-gradient(160deg, #0a1226 0%, #07090f 100%);
+      color: #eaf0ff;
+    }
+    header {
+      text-align: center;
+      padding: 26px 16px 12px;
+      font-family: 'Orbitron', monospace;
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+    }
+    .page-wrap {
+      width: min(980px, calc(100% - 24px));
+      margin: 0 auto 34px;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .toolbar .group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .content-box {
+      background: rgba(14,22,44,0.72);
+      border: 1px solid rgba(120,163,255,0.12);
+      border-radius: 16px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+      padding: 18px;
+    }
+    .content-box h2 {
+      margin-bottom: 14px;
+      font-size: 1.12rem;
+    }
+    #newPostForm {
+      display: grid;
+      gap: 10px;
+    }
+    #newPostForm input,
+    #newPostForm textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(120,163,255,0.18);
+      border-radius: 10px;
+      color: #fff;
+      padding: 11px;
+    }
+    #newPostForm textarea {
+      resize: vertical;
+      min-height: 110px;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0,0,0,0.5);
+      z-index: 20;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      width: min(420px, calc(100% - 30px));
+      background: #111b34;
+      border: 1px solid rgba(120,163,255,0.2);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 12px;
+    }
+  </style>
 </head>
 <body>
 
   <header>LegacyAuto Forum</header>
- <button onclick="goBack()" style="margin: 16px;">← Back to Dashboard</button>
-  <div class="container">
+  <div class="page-wrap">
+
+    <div class="toolbar">
+      <div class="group">
+        <button onclick="goBack()">← Back to Dashboard</button>
+      </div>
+      <div class="group">
+        <button onclick="loadDiscussions()">All Posts</button>
+        <button onclick="loadBookmarks()">Bookmarked</button>
+      </div>
+    </div>
 
     <!-- Code for new posts (form) -->
     <div class="content-box">
@@ -20,9 +111,6 @@
         <button type="submit">Post Discussion</button>
       </form>
     </div>
-
-<button onclick="loadDiscussions()">All Posts</button>
-<button onclick="loadBookmarks()">Bookmarked</button>
 
     <!-- Code that displays recent discussions -->
     <div class="content-box" style="margin-top: 24px;">

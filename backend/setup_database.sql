@@ -62,6 +62,18 @@ CREATE TABLE Customized_car_parts (
         FOREIGN KEY (PartID) REFERENCES Parts(PartID)
 );
 
+CREATE TABLE partsreviews (
+    PartReviewID INT NOT NULL AUTO_INCREMENT,
+    PartID       INT NOT NULL,
+    PartRating   INT NOT NULL,
+    comment      TEXT,
+    posted       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (PartReviewID),
+    KEY idx_partsreviews_part (PartID),
+    CONSTRAINT fk_partsreviews_part
+        FOREIGN KEY (PartID) REFERENCES Parts(PartID)
+);
+
 -- ========================
 -- TRADE TABLES
 -- ========================
@@ -93,6 +105,51 @@ CREATE TABLE TradeOffers (
         FOREIGN KEY (TradeID) REFERENCES Trades(TradeID),
     CONSTRAINT fk_tradeoffers_user
         FOREIGN KEY (OfferingUserID) REFERENCES `User`(UserID)
+);
+
+-- ========================
+-- DISCUSSION / FORUM TABLES
+-- ========================
+
+CREATE TABLE Discussions (
+    DiscussionID INT NOT NULL AUTO_INCREMENT,
+    UserID       INT NOT NULL,
+    Title        VARCHAR(255) NOT NULL,
+    Content      TEXT NOT NULL,
+    CreatedAt    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (DiscussionID),
+    KEY idx_discussions_user (UserID),
+    CONSTRAINT fk_discussions_user
+        FOREIGN KEY (UserID) REFERENCES `User`(UserID)
+);
+
+CREATE TABLE DiscussionReplies (
+    ReplyID      INT NOT NULL AUTO_INCREMENT,
+    DiscussionID INT NOT NULL,
+    UserID       INT NOT NULL,
+    Content      TEXT NOT NULL,
+    CreatedAt    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (ReplyID),
+    KEY idx_replies_discussion (DiscussionID),
+    KEY idx_replies_user (UserID),
+    CONSTRAINT fk_replies_discussion
+        FOREIGN KEY (DiscussionID) REFERENCES Discussions(DiscussionID) ON DELETE CASCADE,
+    CONSTRAINT fk_replies_user
+        FOREIGN KEY (UserID) REFERENCES `User`(UserID)
+);
+
+CREATE TABLE Bookmarks (
+    BookmarkID   INT NOT NULL AUTO_INCREMENT,
+    UserID       INT NOT NULL,
+    DiscussionID INT NOT NULL,
+    PRIMARY KEY (BookmarkID),
+    UNIQUE KEY uq_bookmark (UserID, DiscussionID),
+    KEY idx_bookmarks_user (UserID),
+    KEY idx_bookmarks_discussion (DiscussionID),
+    CONSTRAINT fk_bookmarks_user
+        FOREIGN KEY (UserID) REFERENCES `User`(UserID),
+    CONSTRAINT fk_bookmarks_discussion
+        FOREIGN KEY (DiscussionID) REFERENCES Discussions(DiscussionID) ON DELETE CASCADE
 );
 
 -- ========================
@@ -189,6 +246,32 @@ INSERT INTO Parts (PartID, Name, Stock, Availability, Category, Image, Price) VA
 (500467921, 'American Thunder Axle-back Exhaust System',      0,  'Out of Stock', 'exhaust system','https://images.flowmastermufflers.com/583x/1eed06e7ef0232847de4e0989b3c88bc96c2adb5.jpg', 1500.95),
 (900467921, 'Urethane Basecoat - Purple Metallic 1 Gallon',   43, 'Available',    'paint',         'https://paintforcars.com/wp-content/uploads/2018/10/Purple-Metallic-Auto-Paint-5-570x572-1.jpg', 144.48);
 
+INSERT INTO Parts (PartID, Name, Stock, Availability, Category, Image, Price) VALUES
+(17277633, 'Muscle Base',                               9, 'Available', 'car',            'https://dummyimage.com/1280x720/0f172a/93c5fd.png&text=Muscle+Base',  32000.00),
+(83451953, 'SUV Base',                                  7, 'Available', 'car',            'https://dummyimage.com/1280x720/111827/93c5fd.png&text=SUV+Base',     30000.00),
+(93469582, 'Truck Base',                                6, 'Available', 'car',            'https://dummyimage.com/1280x720/1f2937/93c5fd.png&text=Truck+Base',   32000.00),
+(22782485, 'Coupe Base',                                4, 'Available', 'car',            'https://dummyimage.com/1280x720/0b1220/93c5fd.png&text=Coupe+Base',   28000.00),
+(26501480, 'White Paint',                              20, 'Available', 'paint',          '/Sprint4-Alberto/car-paints/white.png',                                 100.00),
+(18066938, 'Black Paint',                              20, 'Available', 'paint',          '/Sprint4-Alberto/car-paints/black.png',                                 115.00),
+(29367808, 'Neon Purple Paint',                        15, 'Available', 'paint',          '/Sprint4-Alberto/car-paints/purple.png',                                130.00),
+(28056391, 'Neon Green Paint',                         15, 'Available', 'paint',          '/Sprint4-Alberto/car-paints/green.png',                                 145.00),
+(85052968, 'Black Sport Rims',                         15, 'Available', 'rims',           '/Sprint4-Alberto/car-rims/blackSport.png',                             1200.00),
+(82890043, 'Grey Sport Rims',                          15, 'Available', 'rims',           '/Sprint4-Alberto/car-rims/greySport.png',                              1200.00),
+(99057491, 'Bronze Offroad Rims',                      10, 'Available', 'rims',           '/Sprint4-Alberto/car-rims/bronzeOffRoad.png',                          1500.00),
+(1779980,  'Offroad Black Rims',                       10, 'Available', 'rims',           '/Sprint4-Alberto/car-rims/OffRoadBlack.png',                           1400.00),
+(27277633, '6.7 Cummins Engine',                        5, 'Available', 'engine',         'https://dummyimage.com/900x600/1f2937/ffffff.png&text=6.7+Cummins+Engine',     5995.00),
+(13277633, '6.4 PowerStroke Engine',                    3, 'Available', 'engine',         'https://dummyimage.com/900x600/1f2937/ffffff.png&text=6.4+PowerStroke+Engine', 6795.00),
+(17477633, '3.6 V6 Engine',                             7, 'Available', 'engine',         'https://dummyimage.com/900x600/1f2937/ffffff.png&text=3.6+V6+Engine',          2578.00),
+(17257633, 'Spring Suspension',                         7, 'Available', 'suspension',     'https://dummyimage.com/900x600/111827/d1d5db.png&text=Spring+Suspension',      156.79),
+(17276633, 'Cush Suspension',                           3, 'Available', 'suspension',     'https://dummyimage.com/900x600/111827/d1d5db.png&text=Cush+Suspension',        256.89),
+(17277733, 'Air Suspension',                            8, 'Available', 'suspension',     'https://dummyimage.com/900x600/111827/d1d5db.png&text=Air+Suspension',         329.87),
+(17277683, 'Stainless Steel Cat-Back Exhaust System',   3, 'Available', 'exhaust system', 'https://dummyimage.com/900x600/0b1324/e5e7eb.png&text=Stainless+Exhaust',       1800.00),
+(17277639, 'AWE Tuning Track Cat-Back Exhaust System',  5, 'Available', 'exhaust system', 'https://dummyimage.com/900x600/0b1324/e5e7eb.png&text=AWE+Track+Exhaust',       3200.00),
+(17277631, 'Dual Exit Cat-Back Exhaust System',         2, 'Available', 'exhaust system', 'https://dummyimage.com/900x600/0b1324/e5e7eb.png&text=Dual+Exit+Exhaust',       1400.00),
+(17277623, 'HornBlasters The Godfather Musical Air Horn', 3, 'Available', 'horn',        'https://dummyimage.com/900x600/1e293b/f8fafc.png&text=Godfather+Horn',          35.00),
+(17277333, 'HornBlasters Dixie Musical Horn',           5, 'Available', 'horn',           'https://dummyimage.com/900x600/1e293b/f8fafc.png&text=Dixie+Horn',              47.00),
+(17274633, 'HornBlasters Shocker XL Train Horn',        9, 'Available', 'horn',           'https://dummyimage.com/900x600/1e293b/f8fafc.png&text=Shocker+XL+Horn',        459.00);
+
 -- ========================
 -- SAMPLE DATA: EMPLOYEES
 -- ========================
@@ -278,4 +361,8 @@ SELECT COUNT(*) AS PartCount FROM Parts;
 SELECT COUNT(*) AS EmpCount FROM Employees;
 SELECT COUNT(*) AS CarCount FROM Customized_car;
 SELECT COUNT(*) AS CarPartsCount FROM Customized_car_parts;
-SELECT * from user;
+SELECT COUNT(*) AS ReviewCount FROM partsreviews;
+SELECT COUNT(*) AS DiscussionCount FROM Discussions;
+SELECT COUNT(*) AS ReplyCount FROM DiscussionReplies;
+SELECT COUNT(*) AS BookmarkCount FROM Bookmarks;
+SELECT * FROM `User`;

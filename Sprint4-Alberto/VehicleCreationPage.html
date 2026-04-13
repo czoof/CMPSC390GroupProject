@@ -35,6 +35,65 @@
         #carContainer {position: relative; width: 100%; display: flex; justify-content: center; }
         #viewControls { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.6); padding: 6px 14px; border-radius: 12px; z-index: 10;}
         #viewControls span {font-size: 14px;}
+        .preview-stage {
+            width: min(760px, 95%);
+            min-height: 500px;
+            background: rgba(12,20,40,0.55);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 0 50px rgba(79,144,240,0.2), 0 20px 40px rgba(0,0,0,0.45);
+        }
+        .preview-meta { color: rgba(175,200,245,0.78); margin-bottom: 14px; font-size: 0.9rem; }
+        .car-shell {
+            width: 100%;
+            min-height: 360px;
+            border-radius: 18px;
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 50%), linear-gradient(145deg, #273252 0%, #121a33 100%);
+            display: grid;
+            grid-template-columns: 1fr 220px;
+            gap: 18px;
+            padding: 20px;
+            align-items: center;
+        }
+        .paint-panel {
+            height: 280px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: linear-gradient(155deg, rgba(255,255,255,0.2), rgba(0,0,0,0.15));
+            position: relative;
+            overflow: hidden;
+        }
+        .paint-panel::after {
+            content: "";
+            position: absolute;
+            inset: 10px;
+            border-radius: 10px;
+            border: 1px dashed rgba(255,255,255,0.28);
+        }
+        .rim-panel {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 280px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .rim-panel img {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            background: rgba(255,255,255,0.92);
+            border-radius: 12px;
+            padding: 10px;
+        }
+        .preview-empty {
+            color: rgba(175,200,245,0.72);
+            text-align: center;
+            padding: 40px 20px;
+            border: 1px dashed rgba(79,144,240,0.3);
+            border-radius: 12px;
+        }
 </style>
 </head>
 
@@ -81,7 +140,7 @@
                     <option value="blackSport">Sport Black</option>
                     <option value="greySport">Sport Silver</option>
                     <option value="bronzeOffRoad">Offroad Bronze</option>
-                    <option value="OffRoadBlack">Offroad Black</option>
+                    <option value="offRoadBlack">Offroad Black</option>
                 </select>
             </div>
 
@@ -115,8 +174,10 @@
     <!-- RIGHT SIDE -->
     <div class="right-side">
         <div id="carContainer">
-
-        <div id="carPreview"></div>
+            <div class="preview-stage">
+                <div class="preview-meta" id="previewMeta">Select model, color, and rims to preview your build.</div>
+                <div id="carPreview"></div>
+            </div>
 
 
 
@@ -130,7 +191,7 @@ Parts Trading & Vehicle Customization Platform
 
 <script>
 const BASE_PRICE = 25000;
-const API_BASE = `${window.location.protocol}//${window.location.hostname}:3000`;
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
 const userId = localStorage.getItem("userId");
 const baseCarEl = document.getElementById("baseCar");
 const saveResultEl = document.getElementById("saveResult");
@@ -140,21 +201,14 @@ let allParts = [];
 let currentView = "front";
 
 if (!userId) {  //send to login if no userId in localStorage
-    window.location.replace("/Sprint4-Alberto/CustomerSingInPage.html");
+    window.location.replace("/Sprint2Alberto/CustomerSingInPage.html");
 }
 
 function updateSummary() {
-    let total = 0;
+    let total = BASE_PRICE;
     let partNames = [];
 
     const baseCar = baseCarEl.value;
-    if (baseCar) {
-        const carPart = allParts.find(p =>
-            p.Category?.toLowerCase() === "car" && p.Name.toLowerCase().startsWith(baseCar.toLowerCase())
-        );
-        if (carPart) {total += Number(carPart.Price);}
-    }
-
     const colorValue = document.getElementById("carColor").value;
     if (colorValue) {
         const colorPart = allParts.find(p =>
@@ -166,7 +220,7 @@ function updateSummary() {
     const rimsValue = document.getElementById("carRims").value;
     if (rimsValue) {
         const rimsPart = allParts.find(p =>
-            p.Category?.toLowerCase() === "rims" && p.Image?.toLowerCase().includes(rimsValue.toLowerCase())
+            p.Category?.toLowerCase() === "wheel" && p.Image?.toLowerCase().includes(rimsValue.toLowerCase())
         );
         if (rimsPart) { total += Number(rimsPart.Price);}
     }
@@ -243,7 +297,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     const rimsValue = document.getElementById("carRims").value;
     if (rimsValue) {
         const rimsPart = allParts.find(p =>
-            p.Category?.toLowerCase() === "rims" &&
+            p.Category?.toLowerCase() === "wheel" &&
             p.Image?.toLowerCase().includes(rimsValue.toLowerCase())
         );
         if (rimsPart) {
@@ -295,18 +349,6 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
             return;
         }
         
-
-       const baseCar = baseCarEl.value;
-
-        const imageName = rims
-            ? `${baseCar}_${color}_${rims}.png`
-            : `${baseCar}_${color}_basic.png`;
-
-        document.getElementById("carPreview").innerHTML = `
-            <img src="/Sprint4-Alberto/car-images/${imageName}" 
-                style="width:800px; max-width:100%; background:white; padding:10px;"
-        `;
-
         saveResultEl.textContent = "Configuration saved successfully.";
         saveResultEl.style.color = "green";
         } catch (e) {
@@ -374,26 +416,35 @@ function updateCarPreview() {
     const baseCar = document.getElementById("baseCar").value;
     const color = document.getElementById("carColor").value;
     const rims = document.getElementById("carRims").value;
+        const preview = document.getElementById("carPreview");
+        const previewMeta = document.getElementById("previewMeta");
 
-    console.log("Preview:", baseCar, color, rims);
+        if (!baseCar) {
+                previewMeta.textContent = "Select model, color, and rims to preview your build.";
+                preview.innerHTML = `<div class="preview-empty">Your custom vehicle preview will appear here.</div>`;
+                return;
+        }
 
-    if (!baseCar || !color) {
-    return;
-    }
+        const paintColors = {
+                white: "linear-gradient(145deg, #fafafa 0%, #d9d9d9 100%)",
+                black: "linear-gradient(145deg, #2d2d32 0%, #0f0f12 100%)",
+                purple: "linear-gradient(145deg, #7c5cff 0%, #3e2b8f 100%)",
+                green: "linear-gradient(145deg, #57ff9d 0%, #1f8650 100%)"
+        };
+        const paintBg = paintColors[color] || "linear-gradient(145deg, #34406b 0%, #1b2546 100%)";
 
-    let imageName;
-    if (!rims) {
-    imageName = `${baseCar}_${color}_basic_${currentView}.png`;
-} else {
-    imageName = `${baseCar}_${color}_${rims}_${currentView}.png`;
-}
+        const rimImage = rims ? `/Sprint4-Alberto/car-rims/${rims}.png` : "";
+        const viewLabel = currentView === "front" ? "Front" : "Back";
+        previewMeta.textContent = `${baseCar} | ${color || "no color"} | ${rims || "no rims"} | ${viewLabel} view`;
 
-    console.log("Trying:", imageName);
-
-    document.getElementById("carPreview").innerHTML = `
-    <img src="/Sprint4-Alberto/car-images/${imageName}" 
-         style="width:800px; max-width:100%; background:white; padding:10px;">
-`;
+        preview.innerHTML = `
+            <div class="car-shell">
+                <div class="paint-panel" style="background:${paintBg};"></div>
+                <div class="rim-panel">
+                    ${rimImage ? `<img src="${rimImage}" alt="${rims} rim preview"/>` : `<div class="preview-empty">Select rims</div>`}
+                </div>
+            </div>
+        `;
 }
 
 document.getElementById("baseCar").addEventListener("change", updateCarPreview); /*these three will update the car preview when their values change*/
