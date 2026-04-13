@@ -76,7 +76,7 @@
   <p><strong>Total: $<span id="cartTotal">0.00</span></strong></p>
 
   <div class="top-actions">
-    <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + localStorage.getItem('userId')">Back to Dashboard</button>
+    <button onclick="window.location.href='/Sprint2-Charles/CustomerDashboard.html?userId=' + currentUserId">Back to Dashboard</button>
   </div>
 </div>
 
@@ -89,7 +89,14 @@ let parts = [];
 let allParts = [];
 let cart = [];
 let currentPartId = null;
-const currentUserId = Number(localStorage.getItem("userId"));
+const params = new URLSearchParams(window.location.search);
+const userIdFromQuery = params.get("userId");
+const userIdFromStorage = localStorage.getItem("userId");
+const currentUserId = Number(userIdFromQuery || userIdFromStorage);
+
+if (userIdFromQuery && userIdFromQuery !== userIdFromStorage) {
+  localStorage.setItem("userId", userIdFromQuery);
+}
 
 function getSelectedCategories() {
   const selected = [];
