@@ -12,6 +12,48 @@ app.use(express.json());
 // Example: http://localhost:3000/Sprint2Alberto/CustomerSingInPage.html
 app.use(express.static(path.join(__dirname, "..")));
 
+function ensurePartsReviewOwnershipSchema() {
+  db.query("SHOW TABLES LIKE 'partsreviews'", (tableErr, tableRows) => {
+    if (tableErr) {
+      console.error("Failed to check partsreviews table:", tableErr);
+      return;
+    }
+
+    if (!Array.isArray(tableRows) || tableRows.length === 0) {
+      return;
+    }
+
+    db.query("SHOW COLUMNS FROM partsreviews LIKE 'UserID'", (columnErr, columnRows) => {
+      if (columnErr) {
+        console.error("Failed to inspect partsreviews columns:", columnErr);
+        return;
+      }
+
+      if (Array.isArray(columnRows) && columnRows.length > 0) {
+        return;
+      }
+
+      const alterSql = `
+        ALTER TABLE partsreviews
+        ADD COLUMN UserID INT NULL,
+        ADD KEY idx_partsreviews_user (UserID),
+        ADD CONSTRAINT fk_partsreviews_user FOREIGN KEY (UserID) REFERENCES \`User\`(UserID)
+      `;
+
+      db.query(alterSql, (alterErr) => {
+        if (alterErr) {
+          console.error("Failed to migrate partsreviews ownership schema:", alterErr);
+          return;
+        }
+
+        console.log("partsreviews table updated with UserID ownership column.");
+      });
+    });
+  });
+}
+
+ensurePartsReviewOwnershipSchema();
+
 /* Root route */
 app.get("/", (req, res) => {
   res.send("CMPSC390 Backend API is running (Charles - Backend).");
@@ -1261,7 +1303,13 @@ app.get("/api/partsreviews/:partId", (req, res) => {
     return res.status(400).json({ error: "Invalid part ID" });
   }
   db.query(
-    "SELECT * FROM partsreviews WHERE PartID = ? ORDER BY posted DESC",
+    `
+      SELECT partsreviews.*, User.UserName AS ReviewUserName
+      FROM partsreviews
+      LEFT JOIN User ON User.UserID = partsreviews.UserID
+      WHERE PartID = ?
+      ORDER BY posted DESC
+    `,
     [partId],
     (err, results) => {
       if (err) {
@@ -1274,22 +1322,49 @@ app.get("/api/partsreviews/:partId", (req, res) => {
 });
 
 app.post("/api/partsreviews", (req, res) => {
-  const { PartID, rating, comment } = req.body;
+  const { PartID, rating, comment, userId } = req.body;
   const parsedPartId = parseInt(PartID, 10);
   const parsedRating = parseInt(rating, 10);
+  const parsedUserId = parseInt(userId, 10);
 
-  if (!parsedPartId || isNaN(parsedPartId) || !parsedRating || isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+  if (!parsedPartId || isNaN(parsedPartId) || !parsedRating || isNaN(parsedRating) || parsedRating < 1 || parsedRating > 5 || !parsedUserId || isNaN(parsedUserId)) {
     return res.status(400).json({ error: "Missing or invalid required fields" });
   }
 
   db.query(
-    "INSERT INTO partsreviews (PartID, PartRating, comment) VALUES (?, ?, ?)",
-    [parsedPartId, parsedRating, comment || null],
+    "INSERT INTO partsreviews (PartID, PartRating, comment, UserID) VALUES (?, ?, ?, ?)",
+    [parsedPartId, parsedRating, comment || null, parsedUserId],
     (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ error: "Database error" });
       }
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete("/api/partsreviews/:reviewId", (req, res) => {
+  const reviewId = parseInt(req.params.reviewId, 10);
+  const userId = parseInt((req.body && req.body.userId) || req.query.userId, 10);
+
+  if (!reviewId || isNaN(reviewId) || !userId || isNaN(userId)) {
+    return res.status(400).json({ error: "Missing or invalid review/user ID" });
+  }
+
+  db.query(
+    "DELETE FROM partsreviews WHERE PartReviewID = ? AND UserID = ?",
+    [reviewId, userId],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      if (!result || result.affectedRows === 0) {
+        return res.status(403).json({ error: "Not authorized to delete this review" });
+      }
+
       res.json({ success: true });
     }
   );

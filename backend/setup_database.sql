@@ -65,13 +65,17 @@ CREATE TABLE Customized_car_parts (
 CREATE TABLE partsreviews (
     PartReviewID INT NOT NULL AUTO_INCREMENT,
     PartID       INT NOT NULL,
+    UserID       INT NULL,
     PartRating   INT NOT NULL,
     comment      TEXT,
     posted       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (PartReviewID),
     KEY idx_partsreviews_part (PartID),
+    KEY idx_partsreviews_user (UserID),
     CONSTRAINT fk_partsreviews_part
-        FOREIGN KEY (PartID) REFERENCES Parts(PartID)
+        FOREIGN KEY (PartID) REFERENCES Parts(PartID),
+    CONSTRAINT fk_partsreviews_user
+        FOREIGN KEY (UserID) REFERENCES `User`(UserID)
 );
 
 -- ========================
@@ -230,8 +234,8 @@ CREATE TABLE TimeOffRequests (
 
 INSERT INTO `User` (UserID, FirstName, LastName, Password, UserName, ZipCode, Birthdate)
 VALUES
-(1, 'Good', 'Mann', 'Manpas303', 'Goodman', 30314, '2000-02-12');
-
+(1, 'Good', 'Mann', 'Manpas303', 'Goodman', 30314, '2000-02-12'),
+(2, 'John', 'Smith', 'Johnpas303', 'JohnSmith', 60629, '1990-05-20');
 -- ========================
 -- SAMPLE DATA: PARTS
 -- ========================
@@ -244,9 +248,7 @@ INSERT INTO Parts (PartID, Name, Stock, Availability, Category, Image, Price) VA
 (200761731, '376 CI Whipple 3.0L Supercharged LS',            8,  'Available',    'engine',        'https://www.wegnerautomotive.com/assets/Product-Featured-Images/Angle-1-sm-no-VC.png', 33225.00),
 (400204631, 'The La Cucaracha Musical Horn',                  25, 'Available',    'horn',          'https://hornblasters.com/cdn/shop/files/NEW-LA-CUCARACHA.jpg?v=1762199157&width=1800', 49.99),
 (500467921, 'American Thunder Axle-back Exhaust System',      0,  'Out of Stock', 'exhaust system','https://images.flowmastermufflers.com/583x/1eed06e7ef0232847de4e0989b3c88bc96c2adb5.jpg', 1500.95),
-(900467921, 'Urethane Basecoat - Purple Metallic 1 Gallon',   43, 'Available',    'paint',         'https://paintforcars.com/wp-content/uploads/2018/10/Purple-Metallic-Auto-Paint-5-570x572-1.jpg', 144.48);
-
-INSERT INTO Parts (PartID, Name, Stock, Availability, Category, Image, Price) VALUES
+(900467921, 'Urethane Basecoat - Purple Metallic 1 Gallon',   43, 'Available',    'paint',         'https://paintforcars.com/wp-content/uploads/2018/10/Purple-Metallic-Auto-Paint-5-570x572-1.jpg', 144.48),
 (17277633, 'Muscle Base',                               9, 'Available', 'car',            'https://dummyimage.com/1280x720/0f172a/93c5fd.png&text=Muscle+Base',  32000.00),
 (83451953, 'SUV Base',                                  7, 'Available', 'car',            'https://dummyimage.com/1280x720/111827/93c5fd.png&text=SUV+Base',     30000.00),
 (93469582, 'Truck Base',                                6, 'Available', 'car',            'https://dummyimage.com/1280x720/1f2937/93c5fd.png&text=Truck+Base',   32000.00),
