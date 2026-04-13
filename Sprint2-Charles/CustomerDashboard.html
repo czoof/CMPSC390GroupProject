@@ -96,6 +96,13 @@
                 <h3>Saved Configs</h3>
                 <p>Your vehicle configurations</p>
             </button>
+
+            <button class="nav-card" onclick="goToDiscussions()" style="border-color: rgba(79,144,240,0.25); background: rgba(79,144,240,0.08);">
+                <div class="icon">💬</div>
+                <h3>Discussion Forum</h3>
+                <p>Talk with other car enthusiasts</p>
+            </button>
+
         </div>
         
         <div class="content-section">
@@ -158,6 +165,10 @@
             window.location.replace("/Sprint2Alberto/CustomerSingInPage.html");
         }
 
+
+        function goToDiscussions() {
+    window.location.href = '/Sprint2Ari/discussions.html';
+}
         loadCustomer();
         loadSavedBuilds();
     </script>

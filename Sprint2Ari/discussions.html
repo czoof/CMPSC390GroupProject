@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Discussion Threads</title>
+  <link rel="stylesheet" href="../global-ui.css">
+</head>
+<body>
+
+  <header>LegacyAuto Forum</header>
+ <button onclick="goBack()" style="margin: 16px;">← Back to Dashboard</button>
+  <div class="container">
+
+    <!-- Code for new posts (form) -->
+    <div class="content-box">
+      <h2>Create a Discussion</h2>
+      <form id="newPostForm">
+        <input type="text" id="postTitle" placeholder="Discussion Title" required />
+        <textarea id="postContent" placeholder="Write your post..." rows="4" required></textarea>
+        <button type="submit">Post Discussion</button>
+      </form>
+    </div>
+
+<button onclick="loadDiscussions()">All Posts</button>
+<button onclick="loadBookmarks()">Bookmarked</button>
+
+    <!-- Code that displays recent discussions -->
+    <div class="content-box" style="margin-top: 24px;">
+      <h2>Recent Discussions</h2>
+      <div id="discussionList">
+        <!-- placeholder message, still need to add more -->
+        <p>Discussions will display here (work in progress)</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="discussions.js"></script>
+
+  <script>
+function goBack() {
+  window.location.href = "/Sprint2-Charles/CustomerDashboard.html?userId=" + localStorage.getItem("userId");
+}
+</script>
+<!-- DELETE CONFIRM MODAL -->
+<div id="deleteModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Delete Post</h3>
+    <p>Are you sure you want to delete this post?</p>
+
+    <div class="modal-actions">
+      <button id="confirmDeleteBtn">Delete</button>
+      <button id="cancelDeleteBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

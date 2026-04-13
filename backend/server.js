@@ -7,6 +7,15 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+
+// Serve static files from the project root
+// Example: http://localhost:3000/Sprint2Alberto/CustomerSingInPage.html
+app.use(express.static(path.join(__dirname, "..")));
+
+/* Root route */
+app.get("/", (req, res) => {
+  res.send("CMPSC390 Backend API is running (Charles - Backend).");
+});
 app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
@@ -1094,6 +1103,154 @@ app.post("/changePassword", (req, res) => {
   });
 });
 
+/* ==========================================
+   DISCUSSION THREAD FEATURE
+========================================== */
+
+// Get recent discussions
+app.get("/discussions", (req, res) => {
+    const sql = "SELECT Discussions.*, User.UserName FROM Discussions JOIN User ON Discussions.UserID = User.UserID ORDER BY CreatedAt DESC LIMIT 10";
+    db.query(sql, (err, results) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(results);
+    });
+});
+
+// Create a discussion
+app.post("/discussions", (req, res) => {
+    const { userId, title, content } = req.body;
+    if (!userId || !title || !content) return res.status(400).json({ error: "Missing fields" });
+    const sql = "INSERT INTO Discussions (UserID, Title, Content) VALUES (?, ?, ?)";
+    db.query(sql, [userId, title, content], (err, results) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json({ message: "Discussion created!", discussionId: results.insertId });
+    });
+});
+
+// Get replies for a discussion
+app.get("/discussions/:id/replies", (req, res) => {
+    const discussionId = req.params.id;
+    const sql = "SELECT DiscussionReplies.*, User.UserName FROM DiscussionReplies JOIN User ON DiscussionReplies.UserID = User.UserID WHERE DiscussionID = ? ORDER BY CreatedAt ASC";
+    db.query(sql, [discussionId], (err, results) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json(results);
+    });
+});
+
+// Post a reply
+app.post("/discussions/:id/replies", (req, res) => {
+    const discussionId = req.params.id;
+    const { userId, content } = req.body;
+    if (!userId || !content) return res.status(400).json({ error: "Missing fields" });
+    const sql = "INSERT INTO DiscussionReplies (DiscussionID, UserID, Content) VALUES (?, ?, ?)";
+    db.query(sql, [discussionId, userId, content], (err) => {
+        if (err) return res.status(500).json({ error: "Database error" });
+        res.json({ message: "Reply posted!" });
+    });
+});
+
+/* ==========================================
+   DELETE DISCUSSION (ONLY OWNER)
+========================================== */
+app.delete("/discussions/:id", (req, res) => {
+    const discussionId = req.params.id;
+    const userId = Number(req.body.userId);
+
+    // 🔍 DEBUG LOG (VERY IMPORTANT)
+    console.log("DELETE request received:", {
+        discussionId,
+        userId
+    });
+
+    const sql = "DELETE FROM Discussions WHERE DiscussionID = ? AND UserID = ?";
+
+    db.query(sql, [discussionId, userId], (err, result) => {
+        if (err) {
+            console.error("❌ DELETE ERROR:", err); // shows exact DB issue
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        if (result.affectedRows === 0) {
+            console.warn("⚠️ Delete blocked: not owner or post doesn't exist");
+            return res.status(403).json({ error: "Not authorized to delete this post" });
+        }
+
+        console.log("✅ Post deleted successfully");
+        res.json({ message: "Post deleted" });
+    });
+});
+
+
+/* ==========================================
+   BOOKMARK TOGGLE (ADD / REMOVE)
+========================================== */
+app.post("/bookmarks", (req, res) => {
+    const { userId, discussionId } = req.body;
+
+    console.log("Bookmark toggle:", { userId, discussionId });
+
+    const checkSql = "SELECT * FROM Bookmarks WHERE UserID = ? AND DiscussionID = ?";
+
+    db.query(checkSql, [userId, discussionId], (err, results) => {
+        if (err) {
+            console.error("❌ Bookmark check error:", err);
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        if (results.length > 0) {
+            // 🔴 REMOVE bookmark
+            const deleteSql = "DELETE FROM Bookmarks WHERE UserID = ? AND DiscussionID = ?";
+            db.query(deleteSql, [userId, discussionId], (err) => {
+                if (err) {
+                    console.error("❌ Bookmark delete error:", err);
+                    return res.status(500).json({ error: "Database error" });
+                }
+
+                console.log("⭐ Bookmark removed");
+                res.json({ bookmarked: false });
+            });
+
+        } else {
+            // 🟢 ADD bookmark
+            const insertSql = "INSERT INTO Bookmarks (UserID, DiscussionID) VALUES (?, ?)";
+            db.query(insertSql, [userId, discussionId], (err) => {
+                if (err) {
+                    console.error("❌ Bookmark insert error:", err);
+                    return res.status(500).json({ error: "Database error" });
+                }
+
+                console.log("⭐ Bookmark added");
+                res.json({ bookmarked: true });
+            });
+        }
+    });
+});
+
+
+/* ==========================================
+   GET BOOKMARKED POSTS
+========================================== */
+app.get("/bookmarks/:userId", (req, res) => {
+    const userId = req.params.userId;
+
+    const sql = `
+        SELECT Discussions.*, User.UserName
+        FROM Bookmarks
+        JOIN Discussions ON Bookmarks.DiscussionID = Discussions.DiscussionID
+        JOIN User ON Discussions.UserID = User.UserID
+        WHERE Bookmarks.UserID = ?
+        ORDER BY Discussions.CreatedAt DESC
+    `;
+
+    db.query(sql, [userId], (err, results) => {
+        if (err) {
+            console.error("❌ Fetch bookmarks error:", err);
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        res.json(results);
+    });
+});
 // ==========================================
 // SERVER START
 // ==========================================
