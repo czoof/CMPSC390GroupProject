@@ -201,7 +201,9 @@ let allParts = [];
 let currentView = "front";
 
 function getCarImage(baseCar, color, rims, view) {
-  return `https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/${baseCar}_${color}_${rims}_${view}.png?alt=media`;
+    const safeColor = color || "white";
+    const safeRims = rims || "basic";
+    return `https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/${baseCar}_${safeColor}_${safeRims}_${view}.png?alt=media`;
 }
 
 if (!userId) {  //send to login if no userId in localStorage
@@ -463,11 +465,24 @@ function updateCarPreview() {
 //     <img src="/Sprint4-Alberto/car-images/${imageName}" 
 //          style="width:800px; max-width:100%; background:white; padding:10px;">
 // `;
-    const carImgUrl = getCarImage(baseCar, color, rims || "basic", currentView);
-    document.getElementById("carPreview").innerHTML = `
-        <img src="${carImgUrl}" 
-             style="width:800px; max-width:100%; background:white; padding:10px;">
-    `;
+    const carImgUrl = getCarImage(baseCar, color, rims, currentView);
+    preview.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = carImgUrl;
+    img.alt = `${baseCar} ${color || "white"} ${rims || "basic"} ${currentView} view`;
+    img.style.width = "800px";
+    img.style.maxWidth = "100%";
+    img.style.background = "white";
+    img.style.padding = "10px";
+    img.onerror = () => {
+        if (img.dataset.fallbackTried !== "1") {
+            img.dataset.fallbackTried = "1";
+            img.src = getCarImage(baseCar, "white", "basic", currentView);
+            return;
+        }
+        preview.innerHTML = `<div class="preview-empty">Preview image unavailable for this selection.</div>`;
+    };
+    preview.appendChild(img);
 }
 
 document.getElementById("baseCar").addEventListener("change", updateCarPreview); /*these three will update the car preview when their values change*/

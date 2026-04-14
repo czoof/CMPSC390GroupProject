@@ -181,8 +181,13 @@ function fetchParts() {
 function buildImageCandidates(part) {
   const candidates = [];
   const raw = String(part.Image || "").trim();
+  const seededPhoto = `https://picsum.photos/seed/part-${String(part.PartID || "x")}/220/160`;
 
   if (raw) {
+    // Many seeded URLs are text-only placeholders; prefer a photo fallback first.
+    if (raw.includes("dummyimage.com")) {
+      candidates.push(seededPhoto);
+    }
     candidates.push(raw);
     // Handle known case mismatch that can fail on Linux hosts.
     if (raw.includes("/Sprint4-Alberto/car-rims/OffRoadBlack.png")) {
@@ -206,6 +211,7 @@ function buildImageCandidates(part) {
     candidates.push(mapped);
   }
 
+  candidates.push(seededPhoto);
   candidates.push("https://via.placeholder.com/110x90?text=No+Image");
   return [...new Set(candidates)];
 }
