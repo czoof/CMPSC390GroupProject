@@ -181,6 +181,17 @@ function fetchParts() {
 function buildImageCandidates(part) {
   const candidates = [];
   const raw = String(part.Image || "").trim();
+  const partName = String(part.Name || "Part");
+  const category = String(part.Category || "").toLowerCase();
+
+  const categoryFallbacks = {
+    paint: "/Sprint4-Alberto/car-paints/white.png",
+    rims: "/Sprint4-Alberto/car-rims/blackSport.png",
+    wheel: "/Sprint4-Alberto/car-rims/blackSport.png"
+  };
+
+  const svgLabel = encodeURIComponent(partName.length > 24 ? `${partName.slice(0, 24)}...` : partName);
+  const inlineFallback = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='160' viewBox='0 0 220 160'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='%230f1a36'/><stop offset='100%' stop-color='%231f315f'/></linearGradient></defs><rect width='220' height='160' fill='url(%23g)'/><rect x='12' y='12' width='196' height='136' rx='10' fill='none' stroke='%236faeff' stroke-opacity='0.45'/><text x='110' y='84' fill='%23dbe7ff' font-size='12' text-anchor='middle' font-family='Arial,sans-serif'>${svgLabel}</text></svg>`;
 
   if (raw) {
     candidates.push(raw);
@@ -206,7 +217,12 @@ function buildImageCandidates(part) {
     candidates.push(mapped);
   }
 
-  candidates.push("https://via.placeholder.com/110x90?text=No+Image");
+  if (categoryFallbacks[category]) {
+    candidates.push(categoryFallbacks[category]);
+  }
+
+  candidates.push("https://dummyimage.com/220x160/0f1a36/93c5fd.png&text=Part+Image");
+  candidates.push(inlineFallback);
   return [...new Set(candidates)];
 }
 
