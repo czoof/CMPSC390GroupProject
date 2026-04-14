@@ -93,14 +93,16 @@ SET Image = CASE PartID
     WHEN 17274633 THEN 'https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/trainHorn.png?alt=media&token=ec1c3366-73e1-4af2-a20f-22fe46fe6fce'
 	
     -- Car body
-    WHEN 17277633 THEN "https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/Muscle_white_basic_front.png?alt=media&token=c8c9f3c6-c558-4b3a-9034-68960685bb2a"
-    WHEN 83451953 THEN "https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/SUV_white_basic_front.png?alt=media&token=9c457c18-868c-4a86-b594-e1d95aa356ee"
-    WHEN 93469582 THEN "https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/Truck_white_basic_front.png?alt=media&token=430c12a9-cc7a-44b5-963b-c52f32ef5277"
-    WHEN 22782485 THEN "https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/Coupe_white_basic_front.png?alt=media&token=cde9387d-c678-4aab-9c82-9b083f33a410"
+    WHEN 17277633 THEN 'https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/Muscle_white_basic_front.png?alt=media&token=c8c9f3c6-c558-4b3a-9034-68960685bb2a'
+    WHEN 83451953 THEN 'https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/SUV_white_basic_front.png?alt=media&token=9c457c18-868c-4a86-b594-e1d95aa356ee'
+    WHEN 93469582 THEN 'https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/Truck_white_basic_front.png?alt=media&token=430c12a9-cc7a-44b5-963b-c52f32ef5277'
+    WHEN 22782485 THEN 'https://firebasestorage.googleapis.com/v0/b/legautocustdb.firebasestorage.app/o/Coupe_white_basic_front.png?alt=media&token=cde9387d-c678-4aab-9c82-9b083f33a410'
 END
 WHERE PartID IN (
     27277633, 13277633, 17477633,
     17257633, 17276633, 17277733,
     17277683, 17277639, 17277631,
-    17277623, 17277333, 17274633
+    17277623, 17277333, 17274633,
+    17277633, 83451953, 93469582,
+    22782485
 );
