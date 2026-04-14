@@ -181,13 +181,21 @@ function fetchParts() {
 function buildImageCandidates(part) {
   const candidates = [];
   const raw = String(part.Image || "").trim();
-  const seededPhoto = `https://picsum.photos/seed/part-${String(part.PartID || "x")}/220/160`;
+  const category = String(part.Category || "").toLowerCase();
+
+  const categoryFallbacks = {
+    engine: "https://dummyimage.com/220x160/1f2937/ffffff.png&text=Engine",
+    suspension: "https://dummyimage.com/220x160/111827/e5e7eb.png&text=Suspension",
+    horn: "https://dummyimage.com/220x160/1e293b/f8fafc.png&text=Horn",
+    "exhaust system": "https://dummyimage.com/220x160/0b1324/e5e7eb.png&text=Exhaust",
+    buffer: "https://dummyimage.com/220x160/0f172a/93c5fd.png&text=Buffer",
+    paint: "/Sprint4-Alberto/car-paints/white.png",
+    rims: "/Sprint4-Alberto/car-rims/blackSport.png",
+    wheel: "/Sprint4-Alberto/car-rims/blackSport.png",
+    car: "https://dummyimage.com/220x160/0f172a/93c5fd.png&text=Car+Model"
+  };
 
   if (raw) {
-    // Many seeded URLs are text-only placeholders; prefer a photo fallback first.
-    if (raw.includes("dummyimage.com")) {
-      candidates.push(seededPhoto);
-    }
     candidates.push(raw);
     // Handle known case mismatch that can fail on Linux hosts.
     if (raw.includes("/Sprint4-Alberto/car-rims/OffRoadBlack.png")) {
@@ -211,7 +219,10 @@ function buildImageCandidates(part) {
     candidates.push(mapped);
   }
 
-  candidates.push(seededPhoto);
+  if (categoryFallbacks[category]) {
+    candidates.push(categoryFallbacks[category]);
+  }
+
   candidates.push("https://via.placeholder.com/110x90?text=No+Image");
   return [...new Set(candidates)];
 }
